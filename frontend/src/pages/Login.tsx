@@ -1,14 +1,30 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import api from '../lib/api';
 import type { AuthResponse } from '../types';
 
 export default function Login() {
+  const { t, i18n } = useTranslation();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  // Detect system language on component mount
+  useEffect(() => {
+    const browserLang = navigator.language.toLowerCase();
+    let detectedLang = 'en'; // default to English
+    
+    if (browserLang.startsWith('pl')) {
+      detectedLang = 'pl';
+    } else if (browserLang.startsWith('uk') || browserLang.startsWith('ua')) {
+      detectedLang = 'ua';
+    }
+    
+    i18n.changeLanguage(detectedLang);
+  }, [i18n]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,7 +58,7 @@ export default function Login() {
       }
     } catch (err: any) {
       console.error('Login error:', err);
-      setError(err.response?.data?.message || 'Nieprawidłowa nazwa użytkownika lub hasło');
+      setError(err.response?.data?.message || t('auth.loginError'));
     } finally {
       setLoading(false);
     }
@@ -59,10 +75,10 @@ export default function Login() {
               </svg>
             </div>
             <h2 className="mt-6 text-center text-4xl font-extrabold bg-gradient-to-r from-dark-900 to-primary-700 bg-clip-text text-transparent">
-              BinderUA
+              {t('auth.title')}
             </h2>
             <p className="mt-2 text-center text-sm text-dark-600 font-medium">
-              System rejestracji czasu pracy
+              {t('auth.subtitle')}
             </p>
           </div>
           <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
@@ -83,7 +99,7 @@ export default function Login() {
             <div className="space-y-5">
               <div>
                 <label htmlFor="username" className="block text-sm font-semibold text-dark-700 mb-2">
-                  Nazwa użytkownika
+                  {t('auth.username')}
                 </label>
                 <input
                   id="username"
@@ -91,14 +107,14 @@ export default function Login() {
                   type="text"
                   required
                   className="appearance-none block w-full px-4 py-3 border-2 border-dark-300 rounded-lg placeholder-dark-400 text-dark-900 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all sm:text-sm font-medium"
-                  placeholder="Wpisz nazwę użytkownika"
+                  placeholder={t('auth.username')}
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                 />
               </div>
               <div>
                 <label htmlFor="password" className="block text-sm font-semibold text-dark-700 mb-2">
-                  Hasło
+                  {t('auth.password')}
                 </label>
                 <input
                   id="password"
@@ -106,7 +122,7 @@ export default function Login() {
                   type="password"
                 required
                 className="appearance-none block w-full px-4 py-3 border-2 border-dark-300 rounded-lg placeholder-dark-400 text-dark-900 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all sm:text-sm font-medium"
-                placeholder="Wpisz hasło"
+                placeholder={t('auth.password')}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
@@ -125,18 +141,12 @@ export default function Login() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
-                  Trwa logowanie...
+                  {t('auth.loggingIn')}
                 </span>
               ) : (
-                'Zaloguj się'
+                t('auth.login')
               )}
             </button>
-          </div>
-
-          <div className="mt-6 text-center bg-dark-50 p-3 rounded-lg">
-            <p className="text-xs text-dark-600 font-medium">
-              Demo: <span className="font-bold text-primary-700">admin</span> / <span className="font-bold text-primary-700">admin123</span>
-            </p>
           </div>
         </form>
       </div>

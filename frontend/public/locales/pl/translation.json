@@ -10,19 +10,32 @@
     "close": "Zamknij",
     "logout": "Wyloguj",
     "search": "Szukaj",
-    "actions": "Akcje"
+    "actions": "Akcje",
+    "language": "Język"
   },
   "auth": {
     "login": "Zaloguj się",
     "username": "Nazwa użytkownika",
     "password": "Hasło",
-    "loginError": "Nieprawidłowa nazwa użytkownika lub hasło"
+    "loginError": "Nieprawidłowa nazwa użytkownika lub hasło",
+    "title": "BinderUA",
+    "subtitle": "System rejestracji czasu pracy",
+    "loggingIn": "Logowanie..."
   },
   "nav": {
     "dashboard": "Panel główny",
     "timeEntries": "Czas pracy",
     "reports": "Raporty",
-    "users": "Użytkownicy"
+    "users": "Użytkownicy",
+    "calendar": "Kalendarz",
+    "timeTracker": "Time Tracker",
+    "userCalendar": "Kalendarz użytkownika:",
+    "myCalendar": "Mój kalendarz",
+    "searchUser": "Wyszukaj użytkownika...",
+    "viewingCalendar": "Wyświetlany kalendarz:",
+    "previousMonth": "Poprzedni miesiąc",
+    "nextMonth": "Następny miesiąc",
+    "today": "Dzisiaj"
   },
   "timeEntry": {
     "addEntry": "Dodaj wpis",
@@ -42,6 +55,12 @@
     "rejected": "Odrzucony",
     "noEntries": "Brak wpisów czasu pracy",
     "confirmDelete": "Czy na pewno chcesz usunąć ten wpis?"
+  },
+  "rate": {
+    "perMonth": "miesiąc",
+    "perHour": "godzina",
+    "gross": "brutto",
+    "net": "netto"
   },
   "report": {
     "monthlyReport": "Raport miesięczny",

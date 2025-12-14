@@ -8,19 +8,32 @@
     "edit": "Редагувати",
     "close": "Закрити",
     "logout": "Вийти",
-    "search": "Пошук"
+    "search": "Пошук",
+    "language": "Мова"
   },
   "auth": {
     "login": "Увійти",
     "username": "Ім'я користувача",
     "password": "Пароль",
-    "loginError": "Неправильне ім'я користувача або пароль"
+    "loginError": "Неправильне ім'я користувача або пароль",
+    "title": "BinderUA",
+    "subtitle": "Система обліку робочого часу",
+    "loggingIn": "Вхід..."
   },
   "nav": {
     "dashboard": "Панель",
     "timeEntries": "Робочий час",
     "reports": "Звіти",
-    "users": "Користувачі"
+    "users": "Користувачі",
+    "calendar": "Календар",
+    "timeTracker": "Time Tracker",
+    "userCalendar": "Календар користувача:",
+    "myCalendar": "Мій календар",
+    "searchUser": "Пошук користувача...",
+    "viewingCalendar": "Перегляд календаря:",
+    "previousMonth": "Попередній місяць",
+    "nextMonth": "Наступний місяць",
+    "today": "Сьогодні"
   },
   "timeEntry": {
     "addEntry": "Додати запис",
@@ -34,6 +47,12 @@
     "submitted": "Подано",
     "approved": "Затверджено",
     "rejected": "Відхилено"
+  },
+  "rate": {
+    "perMonth": "місяць",
+    "perHour": "година",
+    "gross": "брутто",
+    "net": "нетто"
   },
   "report": {
     "monthlyReport": "Місячний звіт",

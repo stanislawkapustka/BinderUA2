@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import api from '../lib/api';
 import type { User } from '../types';
 
@@ -7,11 +8,24 @@ interface UserManagementProps {
 }
 
 export default function UserManagement({ currentUser }: UserManagementProps) {
+  const { t } = useTranslation();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [formData, setFormData] = useState<Partial<User>>({});
+  const [confirmDialog, setConfirmDialog] = useState<{
+    show: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  }>({ show: false, title: '', message: '', onConfirm: () => {} });
+  const [alertDialog, setAlertDialog] = useState<{
+    show: boolean;
+    title: string;
+    message: string;
+    type: 'error' | 'success' | 'info';
+  }>({ show: false, title: '', message: '', type: 'info' });
 
   useEffect(() => {
     fetchUsers();
@@ -69,19 +83,39 @@ export default function UserManagement({ currentUser }: UserManagementProps) {
     try {
       // Basic validation
       if (!formData.username && isCreating) {
-        alert('Nazwa użytkownika jest wymagana');
+        setAlertDialog({ 
+          show: true, 
+          title: 'Błąd walidacji', 
+          message: 'Nazwa użytkownika jest wymagana',
+          type: 'error'
+        });
         return;
       }
       if (!formData.firstName) {
-        alert('Imię jest wymagane');
+        setAlertDialog({ 
+          show: true, 
+          title: 'Błąd walidacji', 
+          message: 'Imię jest wymagane',
+          type: 'error'
+        });
         return;
       }
       if (!formData.lastName) {
-        alert('Nazwisko jest wymagane');
+        setAlertDialog({ 
+          show: true, 
+          title: 'Błąd walidacji', 
+          message: 'Nazwisko jest wymagane',
+          type: 'error'
+        });
         return;
       }
       if (!formData.email) {
-        alert('Email jest wymagany');
+        setAlertDialog({ 
+          show: true, 
+          title: 'Błąd walidacji', 
+          message: 'Email jest wymagany',
+          type: 'error'
+        });
         return;
       }
 
@@ -97,7 +131,12 @@ export default function UserManagement({ currentUser }: UserManagementProps) {
     } catch (err: any) {
       console.error('Error saving user:', err);
       const errorMessage = err.response?.data?.message || err.message || 'Błąd podczas zapisywania użytkownika';
-      alert(errorMessage);
+      setAlertDialog({ 
+        show: true, 
+        title: 'Błąd', 
+        message: errorMessage,
+        type: 'error'
+      });
     }
   };
 
@@ -115,22 +154,42 @@ export default function UserManagement({ currentUser }: UserManagementProps) {
       await fetchUsers();
     } catch (err) {
       console.error('Error toggling user active status:', err);
-      alert('Błąd podczas zmiany statusu użytkownika');
+      setAlertDialog({ 
+        show: true, 
+        title: 'Błąd', 
+        message: 'Błąd podczas zmiany statusu użytkownika',
+        type: 'error'
+      });
     }
   };
 
   const handleDelete = async (user: User) => {
-    if (!window.confirm(`Czy na pewno chcesz usunąć użytkownika ${user.firstName} ${user.lastName}?`)) {
-      return;
-    }
-
-    try {
-      await api.delete(`/users/${user.id}`);
-      await fetchUsers();
-    } catch (err) {
-      console.error('Error deleting user:', err);
-      alert('Błąd podczas usuwania użytkownika');
-    }
+    setConfirmDialog({
+      show: true,
+      title: 'Potwierdź usunięcie',
+      message: `Czy na pewno chcesz usunąć użytkownika ${user.firstName} ${user.lastName}?`,
+      onConfirm: async () => {
+        setConfirmDialog({ show: false, title: '', message: '', onConfirm: () => {} });
+        try {
+          await api.delete(`/users/${user.id}`);
+          await fetchUsers();
+          setAlertDialog({ 
+            show: true, 
+            title: 'Sukces', 
+            message: 'Użytkownik został usunięty',
+            type: 'success'
+          });
+        } catch (err) {
+          console.error('Error deleting user:', err);
+          setAlertDialog({ 
+            show: true, 
+            title: 'Błąd', 
+            message: 'Błąd podczas usuwania użytkownika',
+            type: 'error'
+          });
+        }
+      }
+    });
   };
 
   if (loading) {
@@ -160,34 +219,34 @@ export default function UserManagement({ currentUser }: UserManagementProps) {
           <table className="min-w-full divide-y-2 divide-dark-200">
             <thead className="bg-gradient-to-r from-dark-900 to-primary-900">
               <tr>
-                <th className="px-4 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">
+                <th className="px-3 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">
                   Imię (UA)
                 </th>
-                <th className="px-4 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">
+                <th className="px-3 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">
                   Nazwisko (UA)
                 </th>
-                <th className="px-4 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">
+                <th className="px-3 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">
                   Imię
                 </th>
-                <th className="px-4 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">
+                <th className="px-3 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">
                   Nazwisko
                 </th>
-                <th className="px-4 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">
+                <th className="px-3 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">
                   Email
                 </th>
-                <th className="px-4 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">
+                <th className="px-3 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">
                   Rola
                 </th>
-                <th className="px-4 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">
+                <th className="px-3 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">
                   Rozliczenie
                 </th>
-                <th className="px-4 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">
+                <th className="px-3 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">
                   Stawka
                 </th>
-                <th className="px-4 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">
+                <th className="px-3 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-4 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">
+                <th className="px-3 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">
                   Akcje
                 </th>
               </tr>
@@ -200,22 +259,22 @@ export default function UserManagement({ currentUser }: UserManagementProps) {
                     !user.active ? 'opacity-50 bg-dark-50' : ''
                   }`}
                 >
-                  <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-dark-900">
+                  <td className="px-3 py-3 whitespace-nowrap text-sm font-medium text-dark-900">
                     {user.firstNameUa || '-'}
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-dark-900">
+                  <td className="px-3 py-3 whitespace-nowrap text-sm font-medium text-dark-900">
                     {user.lastNameUa || '-'}
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm text-dark-700">
+                  <td className="px-3 py-3 whitespace-nowrap text-sm text-dark-700">
                     {user.firstName}
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm text-dark-700">
+                  <td className="px-3 py-3 whitespace-nowrap text-sm text-dark-700">
                     {user.lastName}
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm text-dark-600">
+                  <td className="px-3 py-3 whitespace-nowrap text-sm text-dark-600">
                     {user.email}
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap">
+                  <td className="px-3 py-3 whitespace-nowrap">
                     <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
                       user.role === 'DYREKTOR' 
                         ? 'bg-accent-100 text-accent-800 border border-accent-300'
@@ -226,7 +285,7 @@ export default function UserManagement({ currentUser }: UserManagementProps) {
                       {user.role}
                     </span>
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap">
+                  <td className="px-3 py-3 whitespace-nowrap">
                     <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
                       user.contractType === 'UOP'
                         ? 'bg-green-100 text-green-800 border border-green-300'
@@ -235,13 +294,13 @@ export default function UserManagement({ currentUser }: UserManagementProps) {
                       {user.contractType}
                     </span>
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm text-dark-700 font-semibold">
+                  <td className="px-3 py-3 whitespace-nowrap text-sm text-dark-700 font-semibold">
                     {user.contractType === 'UOP' 
-                      ? `${user.uopGrossRate || 0} PLN/mies. brutto`
-                      : `${user.b2bHourlyNetRate || 0} PLN/h netto`
+                      ? `${user.uopGrossRate || 0} ₴/${t('rate.perMonth')} ${t('rate.gross')}`
+                      : `${user.b2bHourlyNetRate || 0} ₴/${t('rate.perHour')} ${t('rate.net')}`
                     }
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap">
+                  <td className="px-3 py-3 whitespace-nowrap">
                     <button
                       onClick={() => handleToggleActive(user)}
                       className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
@@ -255,7 +314,7 @@ export default function UserManagement({ currentUser }: UserManagementProps) {
                       />
                     </button>
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm">
+                  <td className="px-3 py-3 whitespace-nowrap text-sm">
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => handleEdit(user)}
@@ -407,7 +466,7 @@ export default function UserManagement({ currentUser }: UserManagementProps) {
                 {formData.contractType === 'UOP' ? (
                   <div>
                     <label className="block text-sm font-semibold text-dark-700 mb-2">
-                      Stawka miesięczna brutto (PLN)
+                      {t('rate.perMonth')} {t('rate.gross')} (₴)
                     </label>
                     <input
                       type="number"
@@ -420,7 +479,7 @@ export default function UserManagement({ currentUser }: UserManagementProps) {
                 ) : (
                   <div>
                     <label className="block text-sm font-semibold text-dark-700 mb-2">
-                      Stawka godzinowa netto (PLN)
+                      {t('rate.perHour')} {t('rate.net')} (₴)
                     </label>
                     <input
                       type="number"
@@ -467,6 +526,65 @@ export default function UserManagement({ currentUser }: UserManagementProps) {
                   Zapisz zmiany
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm Dialog */}
+      {confirmDialog.show && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 border-2 border-dark-200">
+            <h3 className="text-xl font-bold text-dark-900 mb-4">{confirmDialog.title}</h3>
+            <p className="text-dark-700 mb-6">{confirmDialog.message}</p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setConfirmDialog({ show: false, title: '', message: '', onConfirm: () => {} })}
+                className="px-6 py-2 bg-dark-200 text-dark-700 rounded-lg hover:bg-dark-300 transition-colors font-medium"
+              >
+                Anuluj
+              </button>
+              <button
+                onClick={confirmDialog.onConfirm}
+                className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium shadow-md hover:shadow-lg"
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Alert Dialog */}
+      {alertDialog.show && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 border-2 border-dark-200">
+            <div className="flex items-start gap-4 mb-4">
+              <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${
+                alertDialog.type === 'error' ? 'bg-red-100' :
+                alertDialog.type === 'success' ? 'bg-green-100' :
+                'bg-blue-100'
+              }`}>
+                <span className={`text-2xl ${
+                  alertDialog.type === 'error' ? 'text-red-600' :
+                  alertDialog.type === 'success' ? 'text-green-600' :
+                  'text-blue-600'
+                }`}>
+                  {alertDialog.type === 'error' ? '⚠' : alertDialog.type === 'success' ? '✓' : 'ℹ'}
+                </span>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-xl font-bold text-dark-900 mb-2">{alertDialog.title}</h3>
+                <p className="text-dark-700">{alertDialog.message}</p>
+              </div>
+            </div>
+            <div className="flex justify-end">
+              <button
+                onClick={() => setAlertDialog({ show: false, title: '', message: '', type: 'info' })}
+                className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium shadow-md hover:shadow-lg"
+              >
+                OK
+              </button>
             </div>
           </div>
         </div>

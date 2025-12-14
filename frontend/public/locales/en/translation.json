@@ -8,19 +8,32 @@
     "edit": "Edit",
     "close": "Close",
     "logout": "Logout",
-    "search": "Search"
+    "search": "Search",
+    "language": "Language"
   },
   "auth": {
     "login": "Login",
     "username": "Username",
     "password": "Password",
-    "loginError": "Invalid username or password"
+    "loginError": "Invalid username or password",
+    "title": "BinderUA",
+    "subtitle": "Time Tracking System",
+    "loggingIn": "Logging in..."
   },
   "nav": {
     "dashboard": "Dashboard",
     "timeEntries": "Time Entries",
     "reports": "Reports",
-    "users": "Users"
+    "users": "Users",
+    "calendar": "Calendar",
+    "timeTracker": "Time Tracker",
+    "userCalendar": "User calendar:",
+    "myCalendar": "My calendar",
+    "searchUser": "Search user...",
+    "viewingCalendar": "Viewing calendar:",
+    "previousMonth": "Previous month",
+    "nextMonth": "Next month",
+    "today": "Today"
   },
   "timeEntry": {
     "addEntry": "Add Entry",
@@ -34,6 +47,12 @@
     "submitted": "Submitted",
     "approved": "Approved",
     "rejected": "Rejected"
+  },
+  "rate": {
+    "perMonth": "month",
+    "perHour": "hour",
+    "gross": "gross",
+    "net": "net"
   },
   "report": {
     "monthlyReport": "Monthly Report",

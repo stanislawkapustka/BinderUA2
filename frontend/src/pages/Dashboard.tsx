@@ -21,7 +21,7 @@ export default function Dashboard() {
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [userSearchTerm, setUserSearchTerm] = useState('');
   const [showUserDropdown, setShowUserDropdown] = useState(false);
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
 
   const getUserFromStorage = () => {
@@ -157,7 +157,7 @@ export default function Dashboard() {
                       : 'text-dark-300 hover:text-white hover:bg-dark-700'
                   }`}
                 >
-                  Kalendarz
+                  {t('nav.calendar')}
                 </button>
                 {user.role === 'DYREKTOR' && (
                   <>
@@ -169,7 +169,7 @@ export default function Dashboard() {
                           : 'text-dark-300 hover:text-white hover:bg-dark-700'
                       }`}
                     >
-                      Użytkownicy
+                      {t('nav.users')}
                     </button>
                     <button
                       onClick={() => setActiveView('reports')}
@@ -179,13 +179,24 @@ export default function Dashboard() {
                           : 'text-dark-300 hover:text-white hover:bg-dark-700'
                       }`}
                     >
-                      Raporty
+                      {t('nav.reports')}
                     </button>
                   </>
                 )}
               </div>
             </div>
             <div className="flex items-center space-x-6">
+              {/* Language Switcher */}
+              <select
+                value={i18n.language}
+                onChange={(e) => i18n.changeLanguage(e.target.value)}
+                className="px-3 py-2 bg-dark-700 text-white rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-accent-500 border border-dark-600 cursor-pointer hover:bg-dark-600 transition-all"
+              >
+                <option value="pl">🇵🇱 Polski</option>
+                <option value="en">🇬🇧 English</option>
+                <option value="ua">🇺🇦 Українська</option>
+              </select>
+              
               <div className="flex items-center space-x-2">
                 <div className="w-8 h-8 rounded-full bg-accent-500 flex items-center justify-center text-white font-semibold">
                   {user.firstName.charAt(0)}{user.lastName.charAt(0)}
@@ -211,7 +222,7 @@ export default function Dashboard() {
       </nav>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+      <main className="max-w-[1800px] mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
           {activeView === 'calendar' && (
             <>
@@ -220,7 +231,7 @@ export default function Dashboard() {
                 <div className="bg-white rounded-xl shadow-lg p-6 mb-6 border-l-4 border-primary-500">
                   <div className="flex items-center gap-4">
                     <label className="text-sm font-semibold text-dark-700 whitespace-nowrap">
-                      Kalendarz użytkownika:
+                      {t('nav.userCalendar')}
                     </label>
                     <div className="flex-1 relative">
                       <input
@@ -229,7 +240,7 @@ export default function Dashboard() {
                         onChange={(e) => setUserSearchTerm(e.target.value)}
                         onFocus={() => setShowUserDropdown(true)}
                         onBlur={() => setTimeout(() => setShowUserDropdown(false), 200)}
-                        placeholder="Wyszukaj użytkownika..."
+                        placeholder={t('nav.searchUser')}
                         className="w-full px-4 py-3 border-2 border-dark-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                       />
                       {showUserDropdown && users.length > 0 && (
@@ -285,12 +296,12 @@ export default function Dashboard() {
                       }}
                       className="px-6 py-3 bg-dark-600 text-white rounded-lg hover:bg-dark-700 transition-colors font-medium whitespace-nowrap"
                     >
-                      Mój kalendarz
+                      {t('nav.myCalendar')}
                     </button>
                   </div>
                   {selectedUserId && (
                     <div className="mt-3 text-sm text-primary-700 font-medium">
-                      Wyświetlany kalendarz: {users.find(u => u.id === selectedUserId)?.firstName} {users.find(u => u.id === selectedUserId)?.lastName}
+                      {t('nav.viewingCalendar')} {users.find(u => u.id === selectedUserId)?.firstName} {users.find(u => u.id === selectedUserId)?.lastName}
                     </div>
                   )}
                 </div>
@@ -303,21 +314,21 @@ export default function Dashboard() {
                     onClick={handlePreviousMonth}
                     className="px-6 py-3 text-dark-700 bg-dark-100 hover:bg-dark-200 rounded-lg transition-all font-medium flex items-center gap-2 hover:shadow-md"
                   >
-                    <span>←</span> Poprzedni miesiąc
+                    <span>←</span> {t('nav.previousMonth')}
                   </button>
                   
                   <button
                     onClick={handleToday}
                     className="px-8 py-3 bg-gradient-to-r from-primary-600 to-primary-700 text-white rounded-lg hover:from-primary-700 hover:to-primary-800 transition-all font-semibold shadow-md hover:shadow-lg"
                   >
-                    Dzisiaj
+                    {t('nav.today')}
                   </button>
                   
                   <button
                     onClick={handleNextMonth}
                     className="px-6 py-3 text-dark-700 bg-dark-100 hover:bg-dark-200 rounded-lg transition-all font-medium flex items-center gap-2 hover:shadow-md"
                   >
-                    Następny miesiąc <span>→</span>
+                    {t('nav.nextMonth')} <span>→</span>
                   </button>
                 </div>
               </div>
