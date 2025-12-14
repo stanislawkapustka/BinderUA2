@@ -6,6 +6,7 @@ import api from '../lib/api';
 import MonthCalendar from '../components/MonthCalendar';
 import TimeEntryForm from '../components/TimeEntryForm';
 import TimeEntryTable from '../components/TimeEntryTable';
+import UserManagement from '../components/UserManagement';
 import type { User, TimeEntry } from '../types';
 
 export default function Dashboard() {
@@ -15,6 +16,7 @@ export default function Dashboard() {
   const [dayEntries, setDayEntries] = useState<TimeEntry[]>([]);
   const [loadingEntries, setLoadingEntries] = useState(false);
   const [calendarKey, setCalendarKey] = useState(0);
+  const [activeView, setActiveView] = useState<'calendar' | 'users' | 'reports'>('calendar');
   const { t } = useTranslation();
   const navigate = useNavigate();
 
@@ -118,6 +120,44 @@ export default function Dashboard() {
               <div className="ml-4 px-3 py-1 bg-accent-500 text-white text-xs font-semibold rounded-full">
                 Time Tracker
               </div>
+              
+              {/* Menu Navigation */}
+              <div className="ml-10 flex items-center space-x-1">
+                <button
+                  onClick={() => setActiveView('calendar')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    activeView === 'calendar'
+                      ? 'bg-accent-500 text-white shadow-lg'
+                      : 'text-dark-300 hover:text-white hover:bg-dark-700'
+                  }`}
+                >
+                  Kalendarz
+                </button>
+                {user.role === 'DYREKTOR' && (
+                  <>
+                    <button
+                      onClick={() => setActiveView('users')}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                        activeView === 'users'
+                          ? 'bg-accent-500 text-white shadow-lg'
+                          : 'text-dark-300 hover:text-white hover:bg-dark-700'
+                      }`}
+                    >
+                      Użytkownicy
+                    </button>
+                    <button
+                      onClick={() => setActiveView('reports')}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                        activeView === 'reports'
+                          ? 'bg-accent-500 text-white shadow-lg'
+                          : 'text-dark-300 hover:text-white hover:bg-dark-700'
+                      }`}
+                    >
+                      Raporty
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
             <div className="flex items-center space-x-6">
               <div className="flex items-center space-x-2">
@@ -147,39 +187,54 @@ export default function Dashboard() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
-          {/* Month Navigation */}
-          <div className="bg-white rounded-xl shadow-lg p-6 mb-6 border-l-4 border-accent-500">
-            <div className="flex items-center justify-between">
-              <button
-                onClick={handlePreviousMonth}
-                className="px-6 py-3 text-dark-700 bg-dark-100 hover:bg-dark-200 rounded-lg transition-all font-medium flex items-center gap-2 hover:shadow-md"
-              >
-                <span>←</span> Poprzedni miesiąc
-              </button>
-              
-              <button
-                onClick={handleToday}
-                className="px-8 py-3 bg-gradient-to-r from-primary-600 to-primary-700 text-white rounded-lg hover:from-primary-700 hover:to-primary-800 transition-all font-semibold shadow-md hover:shadow-lg"
-              >
-                Dzisiaj
-              </button>
-              
-              <button
-                onClick={handleNextMonth}
-                className="px-6 py-3 text-dark-700 bg-dark-100 hover:bg-dark-200 rounded-lg transition-all font-medium flex items-center gap-2 hover:shadow-md"
-              >
-                Następny miesiąc <span>→</span>
-              </button>
-            </div>
-          </div>
+          {activeView === 'calendar' && (
+            <>
+              {/* Month Navigation */}
+              <div className="bg-white rounded-xl shadow-lg p-6 mb-6 border-l-4 border-accent-500">
+                <div className="flex items-center justify-between">
+                  <button
+                    onClick={handlePreviousMonth}
+                    className="px-6 py-3 text-dark-700 bg-dark-100 hover:bg-dark-200 rounded-lg transition-all font-medium flex items-center gap-2 hover:shadow-md"
+                  >
+                    <span>←</span> Poprzedni miesiąc
+                  </button>
+                  
+                  <button
+                    onClick={handleToday}
+                    className="px-8 py-3 bg-gradient-to-r from-primary-600 to-primary-700 text-white rounded-lg hover:from-primary-700 hover:to-primary-800 transition-all font-semibold shadow-md hover:shadow-lg"
+                  >
+                    Dzisiaj
+                  </button>
+                  
+                  <button
+                    onClick={handleNextMonth}
+                    className="px-6 py-3 text-dark-700 bg-dark-100 hover:bg-dark-200 rounded-lg transition-all font-medium flex items-center gap-2 hover:shadow-md"
+                  >
+                    Następny miesiąc <span>→</span>
+                  </button>
+                </div>
+              </div>
 
-          {/* Calendar */}
-          <MonthCalendar
-            key={calendarKey}
-            currentDate={currentDate}
-            onDayClick={handleDayClick}
-            user={user}
-          />
+              {/* Calendar */}
+              <MonthCalendar
+                key={calendarKey}
+                currentDate={currentDate}
+                onDayClick={handleDayClick}
+                user={user}
+              />
+            </>
+          )}
+
+          {activeView === 'users' && user.role === 'DYREKTOR' && (
+            <UserManagement currentUser={user} />
+          )}
+
+          {activeView === 'reports' && user.role === 'DYREKTOR' && (
+            <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-accent-500">
+              <h2 className="text-2xl font-bold text-dark-900 mb-6">Raporty</h2>
+              <p className="text-dark-600">Funkcjonalność raportów będzie tutaj...</p>
+            </div>
+          )}
         </div>
       </main>
 

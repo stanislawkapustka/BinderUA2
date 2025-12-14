@@ -7,7 +7,6 @@ import lombok.NoArgsConstructor;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Positive;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -42,6 +41,12 @@ public class User {
     @Column(nullable = false, length = 100)
     private String lastName;
 
+    @Column(length = 100)
+    private String firstNameUa;
+
+    @Column(length = 100)
+    private String lastNameUa;
+
     @NotBlank(message = "Password is required")
     @Column(nullable = false)
     private String password;
@@ -54,17 +59,23 @@ public class User {
     @Column(nullable = false)
     private ContractType contractType;
 
-    @Positive(message = "UoP gross rate must be positive")
     @Column(precision = 10, scale = 2)
     private BigDecimal uopGrossRate;
 
-    @Positive(message = "B2B hourly rate must be positive")
     @Column(precision = 10, scale = 2)
     private BigDecimal b2bHourlyNetRate;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Language language;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private Boolean active = true;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private Boolean passwordChangeRequired = true;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;

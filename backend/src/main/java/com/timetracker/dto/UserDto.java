@@ -24,22 +24,20 @@ public class UserDto {
     @Email(message = "Email should be valid")
     private String email;
 
-    @NotBlank(message = "First name is required")
     private String firstName;
-
-    @NotBlank(message = "Last name is required")
     private String lastName;
+    private String firstNameUa;
+    private String lastNameUa;
 
     private String role;
     private String contractType;
 
-    @Positive(message = "UoP gross rate must be positive")
     private BigDecimal uopGrossRate;
-
-    @Positive(message = "B2B hourly rate must be positive")
     private BigDecimal b2bHourlyNetRate;
 
     private String language;
+    private Boolean active;
+    private Boolean passwordChangeRequired;
 
     public static UserDto from(User user) {
         return UserDto.builder()
@@ -48,11 +46,15 @@ public class UserDto {
             .email(user.getEmail())
             .firstName(user.getFirstName())
             .lastName(user.getLastName())
+            .firstNameUa(user.getFirstNameUa())
+            .lastNameUa(user.getLastNameUa())
             .role(user.getRole().name())
             .contractType(user.getContractType().name())
             .uopGrossRate(user.getUopGrossRate())
             .b2bHourlyNetRate(user.getB2bHourlyNetRate())
             .language(user.getLanguage().name())
+            .active(user.getActive())
+            .passwordChangeRequired(user.getPasswordChangeRequired())
             .build();
     }
 }

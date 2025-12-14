@@ -28,11 +28,8 @@ public class AuthService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         log.info("Login attempt for user: {}", request.getUsername());
-        log.info("Password from request: {}", request.getPassword());
-        log.info("Stored hash: {}", user.getPassword());
         
         boolean matches = passwordEncoder.matches(request.getPassword(), user.getPassword());
-        log.info("Password matches: {}", matches);
         
         if (!matches) {
             throw new RuntimeException("Invalid credentials");

@@ -1,5 +1,7 @@
 package com.timetracker.controller;
 
+import com.timetracker.dto.ChangePasswordRequest;
+import com.timetracker.dto.SetPasswordRequest;
 import com.timetracker.dto.UserDto;
 import com.timetracker.service.UserService;
 import jakarta.validation.Valid;
@@ -28,6 +30,12 @@ public class UserController {
         return ResponseEntity.ok(userService.getUserById(id));
     }
 
+    @PostMapping
+    @PreAuthorize("hasRole('DYREKTOR')")
+    public ResponseEntity<UserDto> createUser(@Valid @RequestBody UserDto userDto) {
+        return ResponseEntity.ok(userService.createUser(userDto));
+    }
+
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('DYREKTOR')")
     public ResponseEntity<UserDto> updateUser(@PathVariable Long id, @Valid @RequestBody UserDto userDto) {
@@ -39,5 +47,18 @@ public class UserController {
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/password")
+    @PreAuthorize("hasRole('DYREKTOR')")
+    public ResponseEntity<Void> setUserPassword(@PathVariable Long id, @Valid @RequestBody SetPasswordRequest request) {
+        userService.setUserPassword(id, request.getNewPassword());
+        return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/me/password")
+    public ResponseEntity<Void> changeMyPassword(@Valid @RequestBody ChangePasswordRequest request) {
+        userService.changePassword(request.getOldPassword(), request.getNewPassword());
+        return ResponseEntity.ok().build();
     }
 }

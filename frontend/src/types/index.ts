@@ -4,12 +4,16 @@ export interface User {
   email: string;
   firstName: string;
   lastName: string;
+  firstNameUa?: string;
+  lastNameUa?: string;
   fullName?: string;
   role: 'PRACOWNIK' | 'MANAGER' | 'DYREKTOR';
   contractType: 'UOP' | 'B2B';
   language: 'PL' | 'EN' | 'UA';
   uopGrossRate?: number;
   b2bHourlyNetRate?: number;
+  active?: boolean;
+  passwordChangeRequired?: boolean;
 }
 
 export interface AuthResponse {
