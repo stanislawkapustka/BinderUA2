@@ -9,6 +9,7 @@ interface MonthCalendarProps {
   currentDate: Date;
   onDayClick: (date: Date) => void;
   user: User;
+  selectedUserId?: number | null;
 }
 
 interface DayStatus {
@@ -25,7 +26,7 @@ interface Holiday {
   name: string;
 }
 
-export default function MonthCalendar({ currentDate, onDayClick, user }: MonthCalendarProps) {
+export default function MonthCalendar({ currentDate, onDayClick, user, selectedUserId }: MonthCalendarProps) {
   const { t, i18n } = useTranslation();
   const [dayStatuses, setDayStatuses] = useState<Map<string, DayStatus>>(new Map());
   const [holidays, setHolidays] = useState<Holiday[]>([]);
@@ -35,7 +36,7 @@ export default function MonthCalendar({ currentDate, onDayClick, user }: MonthCa
 
   useEffect(() => {
     fetchMonthData();
-  }, [currentDate]);
+  }, [currentDate, selectedUserId]);
 
   const fetchMonthData = async () => {
     setLoading(true);
@@ -44,9 +45,11 @@ export default function MonthCalendar({ currentDate, onDayClick, user }: MonthCa
       const year = currentDate.getFullYear();
 
       // Fetch time entries for current month
-      const { data: entries } = await api.get<TimeEntry[]>('/time-entries', {
-        params: { month, year }
-      });
+      const { data: entries } = selectedUserId
+        ? await api.get<TimeEntry[]>(`/time-entries/user/${selectedUserId}/month/${year}/${month}`)
+        : await api.get<TimeEntry[]>('/time-entries', {
+            params: { month, year }
+          });
 
       // TODO: Add holidays endpoint in backend
       const holidayData: Holiday[] = [];

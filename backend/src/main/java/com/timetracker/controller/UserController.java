@@ -49,13 +49,6 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/{id}/password")
-    @PreAuthorize("hasRole('DYREKTOR')")
-    public ResponseEntity<Void> setUserPassword(@PathVariable Long id, @Valid @RequestBody SetPasswordRequest request) {
-        userService.setUserPassword(id, request.getNewPassword());
-        return ResponseEntity.ok().build();
-    }
-
     @PutMapping("/me/password")
     public ResponseEntity<Void> changeMyPassword(@Valid @RequestBody ChangePasswordRequest request) {
         userService.changePassword(request.getOldPassword(), request.getNewPassword());

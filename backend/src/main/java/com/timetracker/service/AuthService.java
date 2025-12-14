@@ -29,6 +29,11 @@ public class AuthService {
 
         log.info("Login attempt for user: {}", request.getUsername());
         
+        // Check if user is active
+        if (!user.getActive()) {
+            throw new RuntimeException("User account is deactivated");
+        }
+        
         boolean matches = passwordEncoder.matches(request.getPassword(), user.getPassword());
         
         if (!matches) {

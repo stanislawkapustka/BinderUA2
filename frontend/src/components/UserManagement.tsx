@@ -12,9 +12,6 @@ export default function UserManagement({ currentUser }: UserManagementProps) {
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [formData, setFormData] = useState<Partial<User>>({});
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [selectedUserForPassword, setSelectedUserForPassword] = useState<User | null>(null);
-  const [newPassword, setNewPassword] = useState('');
 
   useEffect(() => {
     fetchUsers();
@@ -135,35 +132,7 @@ export default function UserManagement({ currentUser }: UserManagementProps) {
       alert('Błąd podczas usuwania użytkownika');
     }
   };
-  const handleOpenPasswordModal = (user: User) => {
-    setSelectedUserForPassword(user);
-    setNewPassword('');
-    setShowPasswordModal(true);
-  };
 
-  const handleSetPassword = async () => {
-    if (!selectedUserForPassword) return;
-
-    if (newPassword.length < 8) {
-      alert('Has\u0142o musi mie\u0107 minimum 8 znak\u00f3w');
-      return;
-    }
-
-    try {
-      await api.post(`/users/${selectedUserForPassword.id}/password`, {
-        newPassword: newPassword,
-      });
-      alert('Has\u0142o zosta\u0142o zmienione');
-      setShowPasswordModal(false);
-      setNewPassword('');
-      setSelectedUserForPassword(null);
-      await fetchUsers();
-    } catch (err: any) {
-      console.error('Error setting password:', err);
-      const errorMessage = err.response?.data?.message || err.message || 'B\u0142\u0105d podczas ustawiania has\u0142a';
-      alert(errorMessage);
-    }
-  };
   if (loading) {
     return (
       <div className="flex justify-center items-center py-12">
@@ -293,13 +262,6 @@ export default function UserManagement({ currentUser }: UserManagementProps) {
                         className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium shadow-sm hover:shadow-md"
                       >
                         Edytuj
-                      </button>
-                      <button
-                        onClick={() => handleOpenPasswordModal(user)}
-                        className="px-4 py-2 bg-accent-600 text-white rounded-lg hover:bg-accent-700 transition-colors font-medium shadow-sm hover:shadow-md"
-                        title="Ustaw hasło"
-                      >
-                        Hasło
                       </button>
                       <button
                         onClick={() => handleDelete(user)}
@@ -503,62 +465,6 @@ export default function UserManagement({ currentUser }: UserManagementProps) {
                   className="px-6 py-3 bg-gradient-to-r from-accent-500 to-accent-600 text-white rounded-lg hover:from-accent-600 hover:to-accent-700 transition-all font-semibold shadow-md hover:shadow-lg"
                 >
                   Zapisz zmiany
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Password Modal */}
-      {showPasswordModal && selectedUserForPassword && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full border-t-4 border-accent-500">
-            <div className="p-6">
-              <h2 className="text-2xl font-bold text-dark-900 mb-4 border-b-2 border-dark-200 pb-3">
-                Ustaw hasło dla użytkownika
-              </h2>
-              
-              <div className="mb-4">
-                <p className="text-dark-700 font-medium">
-                  {selectedUserForPassword.firstName} {selectedUserForPassword.lastName}
-                </p>
-                <p className="text-sm text-dark-500">{selectedUserForPassword.email}</p>
-              </div>
-
-              <div className="mb-6">
-                <label className="block text-sm font-semibold text-dark-700 mb-2">
-                  Nowe hasło
-                </label>
-                <input
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full px-4 py-3 border-2 border-dark-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  placeholder="Minimum 8 znaków, litery i cyfry"
-                  autoFocus
-                />
-                <p className="mt-2 text-xs text-dark-500">
-                  Hasło musi zawierać minimum 8 znaków, w tym litery i cyfry.
-                </p>
-              </div>
-
-              <div className="flex justify-end space-x-3">
-                <button
-                  onClick={() => {
-                    setShowPasswordModal(false);
-                    setNewPassword('');
-                    setSelectedUserForPassword(null);
-                  }}
-                  className="px-6 py-3 bg-dark-200 text-dark-700 rounded-lg hover:bg-dark-300 transition-colors font-medium"
-                >
-                  Anuluj
-                </button>
-                <button
-                  onClick={handleSetPassword}
-                  className="px-6 py-3 bg-gradient-to-r from-accent-500 to-accent-600 text-white rounded-lg hover:from-accent-600 hover:to-accent-700 transition-all font-semibold shadow-md hover:shadow-lg"
-                >
-                  Ustaw hasło
                 </button>
               </div>
             </div>

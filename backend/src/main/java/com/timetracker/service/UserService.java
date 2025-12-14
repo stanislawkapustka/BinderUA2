@@ -65,7 +65,7 @@ public class UserService {
                 .lastName(userDto.getLastName())
                 .firstNameUa(userDto.getFirstNameUa())
                 .lastNameUa(userDto.getLastNameUa())
-                .password(passwordEncoder.encode("password123")) // Default password
+                .password(passwordEncoder.encode("Temp2024!xY3")) // Temporary password
                 .role(User.Role.valueOf(userDto.getRole() != null ? userDto.getRole() : "PRACOWNIK"))
                 .contractType(User.ContractType.valueOf(userDto.getContractType() != null ? userDto.getContractType() : "UOP"))
                 .language(User.Language.valueOf(userDto.getLanguage() != null ? userDto.getLanguage() : "PL"))
@@ -130,27 +130,6 @@ public class UserService {
     }
 
     @Transactional
-    public void setUserPassword(@NonNull Long id, @NonNull String newPassword) {
-        // Validate password strength
-        if (newPassword.length() < 8) {
-            throw new RuntimeException("Password must be at least 8 characters long");
-        }
-        if (!newPassword.matches(".*[0-9].*")) {
-            throw new RuntimeException("Password must contain at least one digit");
-        }
-        if (!newPassword.matches(".*[a-zA-Z].*")) {
-            throw new RuntimeException("Password must contain at least one letter");
-        }
-
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        user.setPassword(passwordEncoder.encode(newPassword));
-        user.setPasswordChangeRequired(false);
-        userRepository.save(user);
-    }
-
-    @Transactional
     public void changePassword(@NonNull String oldPassword, @NonNull String newPassword) {
         // Get current user from security context
         org.springframework.security.core.Authentication authentication = 
@@ -174,6 +153,9 @@ public class UserService {
         }
         if (!newPassword.matches(".*[a-zA-Z].*")) {
             throw new RuntimeException("Password must contain at least one letter");
+        }
+        if (!newPassword.matches(".*[!@#$%^&*()].*")) {
+            throw new RuntimeException("Password must contain at least one special character (!@#$%^&*())");
         }
 
         user.setPassword(passwordEncoder.encode(newPassword));

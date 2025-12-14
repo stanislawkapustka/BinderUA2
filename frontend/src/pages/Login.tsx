@@ -34,7 +34,12 @@ export default function Login() {
         user: localStorage.getItem('user')
       });
       
-      navigate('/dashboard');
+      // Check if password change is required
+      if (data.user.passwordChangeRequired) {
+        navigate('/change-password');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err: any) {
       console.error('Login error:', err);
       setError(err.response?.data?.message || 'Nieprawidłowa nazwa użytkownika lub hasło');

@@ -17,6 +17,10 @@ export default function Dashboard() {
   const [loadingEntries, setLoadingEntries] = useState(false);
   const [calendarKey, setCalendarKey] = useState(0);
   const [activeView, setActiveView] = useState<'calendar' | 'users' | 'reports'>('calendar');
+  const [users, setUsers] = useState<User[]>([]);
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+  const [userSearchTerm, setUserSearchTerm] = useState('');
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
   const { t } = useTranslation();
   const navigate = useNavigate();
 
@@ -34,8 +38,28 @@ export default function Dashboard() {
   useEffect(() => {
     if (!user) {
       navigate('/login');
+      return;
+    }
+    
+    // Check if password change is required
+    if (user.passwordChangeRequired) {
+      navigate('/change-password');
+    }
+
+    // Fetch users list for DYREKTOR
+    if (user.role === 'DYREKTOR') {
+      fetchUsers();
     }
   }, []);
+
+  const fetchUsers = async () => {
+    try {
+      const { data } = await api.get<{ content: User[] }>('/users');
+      setUsers(data.content || []);
+    } catch (err) {
+      console.error('Error fetching users:', err);
+    }
+  };
 
   const handleDayClick = async (date: Date) => {
     setSelectedDate(date);
@@ -48,9 +72,11 @@ export default function Dashboard() {
       const month = date.getMonth() + 1;
       const year = date.getFullYear();
       
-      const { data: allEntries } = await api.get<TimeEntry[]>('/time-entries', {
-        params: { month, year }
-      });
+      const { data: allEntries } = selectedUserId
+        ? await api.get<TimeEntry[]>(`/time-entries/user/${selectedUserId}/month/${year}/${month}`)
+        : await api.get<TimeEntry[]>('/time-entries', {
+            params: { month, year }
+          });
       
       // Filter entries for selected date
       const filteredEntries = allEntries.filter(entry => entry.date === dateStr);
@@ -189,6 +215,87 @@ export default function Dashboard() {
         <div className="px-4 py-6 sm:px-0">
           {activeView === 'calendar' && (
             <>
+              {/* User Selection for DYREKTOR */}
+              {user.role === 'DYREKTOR' && (
+                <div className="bg-white rounded-xl shadow-lg p-6 mb-6 border-l-4 border-primary-500">
+                  <div className="flex items-center gap-4">
+                    <label className="text-sm font-semibold text-dark-700 whitespace-nowrap">
+                      Kalendarz użytkownika:
+                    </label>
+                    <div className="flex-1 relative">
+                      <input
+                        type="text"
+                        value={userSearchTerm}
+                        onChange={(e) => setUserSearchTerm(e.target.value)}
+                        onFocus={() => setShowUserDropdown(true)}
+                        onBlur={() => setTimeout(() => setShowUserDropdown(false), 200)}
+                        placeholder="Wyszukaj użytkownika..."
+                        className="w-full px-4 py-3 border-2 border-dark-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      />
+                      {showUserDropdown && users.length > 0 && (
+                        <div className="absolute z-10 w-full mt-1 bg-white border-2 border-dark-300 rounded-lg shadow-xl max-h-60 overflow-y-auto">
+                          {users
+                            .filter((u) => u.active !== false && (
+                              userSearchTerm === '' || 
+                              `${u.firstName} ${u.lastName}`.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
+                              `${u.firstNameUa} ${u.lastNameUa}`.toLowerCase().includes(userSearchTerm.toLowerCase())
+                            ))
+                            .map((u) => (
+                              <div
+                                key={u.id}
+                                onClick={() => {
+                                  setSelectedUserId(u.id);
+                                  setUserSearchTerm(`${u.firstName} ${u.lastName}`);
+                                  setShowUserDropdown(false);
+                                  setCalendarKey(prev => prev + 1);
+                                }}
+                                className="px-4 py-3 hover:bg-primary-50 cursor-pointer border-b border-dark-100 last:border-b-0 transition-colors"
+                              >
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <div className="font-medium text-dark-900">
+                                      {u.firstName} {u.lastName}
+                                      {u.firstNameUa && u.lastNameUa && (
+                                        <span className="ml-2 text-dark-600">({u.firstNameUa} {u.lastNameUa})</span>
+                                      )}
+                                    </div>
+                                    <div className="text-sm text-dark-600">{u.email}</div>
+                                  </div>
+                                  <span className={`px-2 py-1 text-xs rounded-full ${
+                                    u.role === 'DYREKTOR' 
+                                      ? 'bg-accent-100 text-accent-800'
+                                      : u.role === 'MANAGER'
+                                      ? 'bg-primary-100 text-primary-800'
+                                      : 'bg-dark-100 text-dark-800'
+                                  }`}>
+                                    {u.role}
+                                  </span>
+                                </div>
+                              </div>
+                            ))}
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => {
+                        setSelectedUserId(null);
+                        setUserSearchTerm('');
+                        setShowUserDropdown(false);
+                        setCalendarKey(prev => prev + 1);
+                      }}
+                      className="px-6 py-3 bg-dark-600 text-white rounded-lg hover:bg-dark-700 transition-colors font-medium whitespace-nowrap"
+                    >
+                      Mój kalendarz
+                    </button>
+                  </div>
+                  {selectedUserId && (
+                    <div className="mt-3 text-sm text-primary-700 font-medium">
+                      Wyświetlany kalendarz: {users.find(u => u.id === selectedUserId)?.firstName} {users.find(u => u.id === selectedUserId)?.lastName}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Month Navigation */}
               <div className="bg-white rounded-xl shadow-lg p-6 mb-6 border-l-4 border-accent-500">
                 <div className="flex items-center justify-between">
@@ -220,7 +327,8 @@ export default function Dashboard() {
                 key={calendarKey}
                 currentDate={currentDate}
                 onDayClick={handleDayClick}
-                user={user}
+                user={selectedUserId ? users.find(u => u.id === selectedUserId) || user : user}
+                selectedUserId={selectedUserId}
               />
             </>
           )}
@@ -265,7 +373,7 @@ export default function Dashboard() {
                   <h3 className="text-lg font-semibold mb-3">Istniejące wpisy</h3>
                   <TimeEntryTable 
                     entries={dayEntries}
-                    currentUser={user}
+                    currentUser={selectedUserId ? users.find(u => u.id === selectedUserId) || user : user}
                     onUpdate={handleEntryUpdate}
                   />
                 </div>
@@ -275,14 +383,27 @@ export default function Dashboard() {
                 </div>
               )}
 
-              {/* Form to add new entry */}
-              <div className="border-t pt-6">
-                <h3 className="text-lg font-semibold mb-4">Dodaj nowy wpis</h3>
-                <TimeEntryForm 
-                  onSuccess={handleFormSuccess}
-                  initialDate={selectedDate}
-                />
-              </div>
+              {/* Form to add new entry - only for own calendar */}
+              {!selectedUserId && (
+                <div className="border-t pt-6">
+                  <h3 className="text-lg font-semibold mb-4">Dodaj nowy wpis</h3>
+                  <TimeEntryForm 
+                    onSuccess={handleFormSuccess}
+                    initialDate={selectedDate}
+                  />
+                </div>
+              )}
+              
+              {/* Information when viewing other user's calendar */}
+              {selectedUserId && (
+                <div className="border-t pt-6">
+                  <div className="bg-primary-50 border-l-4 border-primary-500 p-4 rounded">
+                    <p className="text-sm text-primary-700">
+                      Przeglądasz kalendarz innego użytkownika. Nie możesz dodawać wpisów w jego imieniu.
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
