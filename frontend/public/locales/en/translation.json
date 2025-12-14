@@ -1,0 +1,47 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "close": "Close",
+    "logout": "Logout",
+    "search": "Search"
+  },
+  "auth": {
+    "login": "Login",
+    "username": "Username",
+    "password": "Password",
+    "loginError": "Invalid username or password"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "timeEntries": "Time Entries",
+    "reports": "Reports",
+    "users": "Users"
+  },
+  "timeEntry": {
+    "addEntry": "Add Entry",
+    "date": "Date",
+    "project": "Project",
+    "startTime": "Start Time",
+    "endTime": "End Time",
+    "totalHours": "Total Hours",
+    "description": "Description",
+    "status": "Status",
+    "submitted": "Submitted",
+    "approved": "Approved",
+    "rejected": "Rejected"
+  },
+  "report": {
+    "monthlyReport": "Monthly Report",
+    "month": "Month",
+    "year": "Year",
+    "totalHours": "Total Hours",
+    "totalCost": "Total Cost",
+    "generate": "Generate Report",
+    "export": "Export to Excel"
+  }
+}

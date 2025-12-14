@@ -1,0 +1,60 @@
+{
+  "common": {
+    "loading": "Ładowanie...",
+    "error": "Błąd",
+    "save": "Zapisz",
+    "saving": "Zapisywanie...",
+    "cancel": "Anuluj",
+    "delete": "Usuń",
+    "edit": "Edytuj",
+    "close": "Zamknij",
+    "logout": "Wyloguj",
+    "search": "Szukaj",
+    "actions": "Akcje"
+  },
+  "auth": {
+    "login": "Zaloguj się",
+    "username": "Nazwa użytkownika",
+    "password": "Hasło",
+    "loginError": "Nieprawidłowa nazwa użytkownika lub hasło"
+  },
+  "nav": {
+    "dashboard": "Panel główny",
+    "timeEntries": "Czas pracy",
+    "reports": "Raporty",
+    "users": "Użytkownicy"
+  },
+  "timeEntry": {
+    "addEntry": "Dodaj wpis",
+    "addNew": "Dodaj nowy wpis czasu",
+    "date": "Data",
+    "project": "Projekt",
+    "hours": "Godziny",
+    "startTime": "Godzina rozpoczęcia",
+    "endTime": "Godzina zakończenia",
+    "totalHours": "Łącznie godzin",
+    "description": "Opis",
+    "descriptionPlaceholder": "Opisz wykonaną pracę...",
+    "status": "Status",
+    "user": "Użytkownik",
+    "submitted": "Zgłoszony",
+    "approved": "Zatwierdzony",
+    "rejected": "Odrzucony",
+    "noEntries": "Brak wpisów czasu pracy",
+    "confirmDelete": "Czy na pewno chcesz usunąć ten wpis?"
+  },
+  "report": {
+    "monthlyReport": "Raport miesięczny",
+    "month": "Miesiąc",
+    "year": "Rok",
+    "totalHours": "Łącznie godzin",
+    "totalCost": "Łączny koszt",
+    "generate": "Generuj raport",
+    "export": "Eksportuj do Excel"
+  },
+  "errors": {
+    "saveFailed": "Nie udało się zapisać",
+    "deleteFailed": "Nie udało się usunąć",
+    "loadFailed": "Nie udało się wczytać danych"
+  }
+}

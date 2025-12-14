@@ -1,0 +1,47 @@
+{
+  "common": {
+    "loading": "Завантаження...",
+    "error": "Помилка",
+    "save": "Зберегти",
+    "cancel": "Скасувати",
+    "delete": "Видалити",
+    "edit": "Редагувати",
+    "close": "Закрити",
+    "logout": "Вийти",
+    "search": "Пошук"
+  },
+  "auth": {
+    "login": "Увійти",
+    "username": "Ім'я користувача",
+    "password": "Пароль",
+    "loginError": "Неправильне ім'я користувача або пароль"
+  },
+  "nav": {
+    "dashboard": "Панель",
+    "timeEntries": "Робочий час",
+    "reports": "Звіти",
+    "users": "Користувачі"
+  },
+  "timeEntry": {
+    "addEntry": "Додати запис",
+    "date": "Дата",
+    "project": "Проект",
+    "startTime": "Час початку",
+    "endTime": "Час закінчення",
+    "totalHours": "Всього годин",
+    "description": "Опис",
+    "status": "Статус",
+    "submitted": "Подано",
+    "approved": "Затверджено",
+    "rejected": "Відхилено"
+  },
+  "report": {
+    "monthlyReport": "Місячний звіт",
+    "month": "Місяць",
+    "year": "Рік",
+    "totalHours": "Всього годин",
+    "totalCost": "Загальна вартість",
+    "generate": "Створити звіт",
+    "export": "Експортувати в Excel"
+  }
+}
