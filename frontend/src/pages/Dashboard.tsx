@@ -7,6 +7,7 @@ import MonthCalendar from '../components/MonthCalendar';
 import TimeEntryForm from '../components/TimeEntryForm';
 import TimeEntryTable from '../components/TimeEntryTable';
 import UserManagement from '../components/UserManagement';
+import Projects from './Projects';
 import type { User, TimeEntry } from '../types';
 
 export default function Dashboard() {
@@ -16,7 +17,7 @@ export default function Dashboard() {
   const [dayEntries, setDayEntries] = useState<TimeEntry[]>([]);
   const [loadingEntries, setLoadingEntries] = useState(false);
   const [calendarKey, setCalendarKey] = useState(0);
-  const [activeView, setActiveView] = useState<'calendar' | 'users' | 'reports'>('calendar');
+  const [activeView, setActiveView] = useState<'calendar' | 'users' | 'reports' | 'projects'>('calendar');
   const [users, setUsers] = useState<User[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [userSearchTerm, setUserSearchTerm] = useState('');
@@ -143,9 +144,7 @@ export default function Dashboard() {
               <h1 className="text-2xl font-bold text-white tracking-tight">
                 BinderUA
               </h1>
-              <div className="ml-4 px-3 py-1 bg-accent-500 text-white text-xs font-semibold rounded-full">
-                Time Tracker
-              </div>
+              
               
               {/* Menu Navigation */}
               <div className="ml-10 flex items-center space-x-1">
@@ -180,6 +179,16 @@ export default function Dashboard() {
                       }`}
                     >
                       {t('nav.reports')}
+                    </button>
+                    <button
+                      onClick={() => setActiveView('projects')}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                        activeView === 'projects'
+                          ? 'bg-accent-500 text-white shadow-lg'
+                          : 'text-dark-300 hover:text-white hover:bg-dark-700'
+                      }`}
+                    >
+                      {t('nav.projects') || 'Projekty'}
                     </button>
                   </>
                 )}
@@ -228,7 +237,7 @@ export default function Dashboard() {
             <>
               {/* User Selection for DYREKTOR */}
               {user.role === 'DYREKTOR' && (
-                <div className="bg-white rounded-xl shadow-lg p-6 mb-6 border-l-4 border-primary-500">
+                <div className="bg-white rounded-xl shadow-lg p-3 mb-4 border-l-2 border-primary-500">
                   <div className="flex items-center gap-4">
                     <label className="text-sm font-semibold text-dark-700 whitespace-nowrap">
                       {t('nav.userCalendar')}
@@ -241,7 +250,7 @@ export default function Dashboard() {
                         onFocus={() => setShowUserDropdown(true)}
                         onBlur={() => setTimeout(() => setShowUserDropdown(false), 200)}
                         placeholder={t('nav.searchUser')}
-                        className="w-full px-4 py-3 border-2 border-dark-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border border-dark-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
                       />
                       {showUserDropdown && users.length > 0 && (
                         <div className="absolute z-10 w-full mt-1 bg-white border-2 border-dark-300 rounded-lg shadow-xl max-h-60 overflow-y-auto">
@@ -294,7 +303,7 @@ export default function Dashboard() {
                         setShowUserDropdown(false);
                         setCalendarKey(prev => prev + 1);
                       }}
-                      className="px-6 py-3 bg-dark-600 text-white rounded-lg hover:bg-dark-700 transition-colors font-medium whitespace-nowrap"
+                      className="px-3 py-2 bg-dark-600 text-white rounded-md hover:bg-dark-700 transition-colors text-sm whitespace-nowrap"
                     >
                       {t('nav.myCalendar')}
                     </button>
@@ -308,25 +317,25 @@ export default function Dashboard() {
               )}
 
               {/* Month Navigation */}
-              <div className="bg-white rounded-xl shadow-lg p-6 mb-6 border-l-4 border-accent-500">
+              <div className="bg-white rounded-xl shadow-lg p-3 mb-4 border-l-2 border-accent-500">
                 <div className="flex items-center justify-between">
                   <button
                     onClick={handlePreviousMonth}
-                    className="px-6 py-3 text-dark-700 bg-dark-100 hover:bg-dark-200 rounded-lg transition-all font-medium flex items-center gap-2 hover:shadow-md"
+                    className="px-3 py-2 text-dark-700 bg-dark-100 hover:bg-dark-200 rounded-md transition-all text-sm flex items-center gap-2"
                   >
                     <span>←</span> {t('nav.previousMonth')}
                   </button>
                   
                   <button
                     onClick={handleToday}
-                    className="px-8 py-3 bg-gradient-to-r from-primary-600 to-primary-700 text-white rounded-lg hover:from-primary-700 hover:to-primary-800 transition-all font-semibold shadow-md hover:shadow-lg"
+                    className="px-4 py-2 bg-gradient-to-r from-primary-600 to-primary-700 text-white rounded-md hover:from-primary-700 hover:to-primary-800 transition-all text-sm shadow-md"
                   >
                     {t('nav.today')}
                   </button>
                   
                   <button
                     onClick={handleNextMonth}
-                    className="px-6 py-3 text-dark-700 bg-dark-100 hover:bg-dark-200 rounded-lg transition-all font-medium flex items-center gap-2 hover:shadow-md"
+                    className="px-3 py-2 text-dark-700 bg-dark-100 hover:bg-dark-200 rounded-md transition-all text-sm flex items-center gap-2"
                   >
                     {t('nav.nextMonth')} <span>→</span>
                   </button>
@@ -352,6 +361,12 @@ export default function Dashboard() {
             <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-accent-500">
               <h2 className="text-2xl font-bold text-dark-900 mb-6">Raporty</h2>
               <p className="text-dark-600">Funkcjonalność raportów będzie tutaj...</p>
+            </div>
+          )}
+
+          {activeView === 'projects' && (user.role === 'DYREKTOR' || user.role === 'MANAGER') && (
+            <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-accent-500">
+              <Projects />
             </div>
           )}
         </div>

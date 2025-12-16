@@ -127,7 +127,7 @@ export default function MonthCalendar({ currentDate, onDayClick, user, selectedU
     const isCurrentMonth = isSameMonth(date, currentDate);
     const isToday = isSameDay(date, new Date());
 
-    let className = 'min-h-[120px] p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 hover:shadow-2xl hover:scale-105 ';
+    let className = 'min-h-[72px] p-2 border rounded-md cursor-pointer transition-all duration-200 hover:shadow-md ';
 
     if (!isCurrentMonth) {
       className += 'bg-dark-50 text-dark-400 border-dark-200 ';
