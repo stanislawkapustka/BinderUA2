@@ -13,6 +13,11 @@ import java.util.Objects;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Service handling authentication operations including login and registration.
+ * Validates credentials, checks account status, generates JWT tokens,
+ * and creates new user accounts with default settings.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -22,6 +27,15 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
 
+    /**
+     * Authenticate user and generate JWT token.
+     * Validates credentials using BCrypt, checks account active status,
+     * and includes user role and language in JWT claims.
+     *
+     * @param request Login request containing username and password
+     * @return Authentication response with JWT token, expiration, and user details
+     * @throws RuntimeException if user not found, account inactive, or invalid credentials
+     */
     @Transactional
     public AuthResponse login(AuthRequest request) {
         User user = userRepository.findByUsername(request.getUsername())
@@ -29,17 +43,19 @@ public class AuthService {
 
         log.info("Login attempt for user: {}", request.getUsername());
         
-        // Check if user is active
+        // Check if user account is active (soft-delete check)
         if (!user.getActive()) {
             throw new RuntimeException("User account is deactivated");
         }
         
+        // Verify password using BCrypt
         boolean matches = passwordEncoder.matches(request.getPassword(), user.getPassword());
         
         if (!matches) {
             throw new RuntimeException("Invalid credentials");
         }
 
+        // Generate JWT token with user role and language embedded in claims
         String token = jwtUtil.generateToken(
                 user.getUsername(),
                 user.getRole().name(),
@@ -56,6 +72,15 @@ public class AuthService {
                 .build();
     }
 
+    /**
+     * Register a new user account with default password.
+     * Checks for duplicate username/email before creation.
+     * Sets default role to PRACOWNIK and contract type to UOP if not specified.
+     *
+     * @param userDto User registration data
+     * @return Created user DTO (password excluded)
+     * @throws RuntimeException if username or email already exists
+     */
     @Transactional
     public UserDto register(UserDto userDto) {
         if (userRepository.existsByUsername(userDto.getUsername())) {

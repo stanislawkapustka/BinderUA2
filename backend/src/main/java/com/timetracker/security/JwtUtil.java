@@ -12,6 +12,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
+/**
+ * Utility for JWT token generation, validation, and claims extraction.
+ * Uses HS256 algorithm with Base64-encoded secret key from configuration.
+ * Embeds user role and language in JWT claims for authorization and localization.
+ * Token expiration configurable via binderua.jwt.expiration-ms (default: 24 hours).
+ */
 @Component
 public class JwtUtil {
 
@@ -21,11 +27,24 @@ public class JwtUtil {
     @Value("${binderua.jwt.expiration-ms}")
     private Long expirationMs;
 
+    /**
+     * Decode Base64 secret and create HMAC signing key.
+     *
+     * @return SecretKey for HS256 JWT signing
+     */
     private SecretKey getSigningKey() {
         byte[] keyBytes = Decoders.BASE64.decode(secret);
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
+    /**
+     * Generate JWT token with user role and language embedded in claims.
+     *
+     * @param username Subject (user identifier)
+     * @param role User role (PRACOWNIK, MANAGER, DYREKTOR)
+     * @param language User language preference (PL, EN, UA)
+     * @return Signed JWT token string
+     */
     public String generateToken(String username, String role, String language) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("role", role);
@@ -46,6 +65,13 @@ public class JwtUtil {
                 .compact();
     }
 
+    /**
+     * Validate token by checking username match and expiration.
+     *
+     * @param token JWT token to validate
+     * @param username Expected username from token
+     * @return True if token valid and not expired
+     */
     public Boolean validateToken(String token, String username) {
         final String extractedUsername = extractUsername(token);
         return (extractedUsername.equals(username) && !isTokenExpired(token));

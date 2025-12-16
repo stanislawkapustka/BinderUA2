@@ -11,6 +11,11 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Service managing user accounts including CRUD operations and password management.
+ * Handles user creation with default temporary passwords, role assignment, and contract type configuration.
+ * Enforces password complexity requirements and tracks password change requirements.
+ */
 @Service
 @RequiredArgsConstructor
 public class UserService {
@@ -18,22 +23,51 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
+    /**
+     * Retrieve all users with pagination support.
+     *
+     * @param pageable Pagination parameters (page number, size, sorting)
+     * @return Page of user DTOs (passwords excluded)
+     */
     public Page<UserDto> getAllUsers(@NonNull Pageable pageable) {
         return userRepository.findAll(pageable).map(UserDto::from);
     }
 
+    /**
+     * Retrieve single user by ID.
+     *
+     * @param id User ID to retrieve
+     * @return User DTO (password excluded)
+     * @throws RuntimeException if user not found
+     */
     public UserDto getUserById(@NonNull Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         return UserDto.from(user);
     }
 
+    /**
+     * Retrieve user by username (used for authentication).
+     *
+     * @param username Unique username
+     * @return User DTO (password excluded)
+     * @throws RuntimeException if user not found
+     */
     public UserDto getUserByUsername(String username) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         return UserDto.from(user);
     }
 
+    /**
+     * Create a new user account with BCrypt-hashed temporary password.
+     * Sets passwordChangeRequired=true to force password change on first login.
+     * Validates required fields and checks for duplicate username/email.
+     *
+     * @param userDto User data including username, email, name, role, contract details
+     * @return Created user DTO with generated ID
+     * @throws RuntimeException if validation fails or username/email already exists
+     */
     @Transactional
     public UserDto createUser(UserDto userDto) {
         // Validate required fields
@@ -58,6 +92,7 @@ public class UserService {
             throw new RuntimeException("Email already exists");
         }
 
+        // Build user entity with BCrypt-hashed temporary password
         User user = User.builder()
                 .username(userDto.getUsername())
                 .email(userDto.getEmail())
@@ -78,6 +113,15 @@ public class UserService {
         return UserDto.from(savedUser);
     }
 
+    /**
+     * Update existing user account. Only updates non-null fields from DTO.
+     * Does not modify password, createdAt, or ID fields.
+     *
+     * @param id User ID to update
+     * @param userDto DTO with fields to update (null values ignored)
+     * @return Updated user DTO
+     * @throws RuntimeException if user not found
+     */
     @Transactional
     public UserDto updateUser(@NonNull Long id, UserDto userDto) {
         User user = userRepository.findById(id)
@@ -121,6 +165,13 @@ public class UserService {
         return UserDto.from(savedUser);
     }
 
+    /**
+     * Delete user account permanently.
+     * Consider using soft-delete (active=false) instead for audit trail preservation.
+     *
+     * @param id User ID to delete
+     * @throws RuntimeException if user not found
+     */
     @Transactional
     public void deleteUser(@NonNull Long id) {
         if (!userRepository.existsById(id)) {
@@ -129,6 +180,20 @@ public class UserService {
         userRepository.deleteById(id);
     }
 
+    /**
+     * Change password for currently authenticated user.
+     * Validates old password, enforces complexity requirements, and clears passwordChangeRequired flag.
+     * 
+     * Password requirements:
+     * - Minimum 8 characters
+     * - At least one digit
+     * - At least one letter
+     * - At least one special character (!@#$%^&*())
+     *
+     * @param oldPassword Current password for verification
+     * @param newPassword New password meeting complexity requirements
+     * @throws RuntimeException if old password incorrect or new password doesn't meet requirements
+     */
     @Transactional
     public void changePassword(@NonNull String oldPassword, @NonNull String newPassword) {
         // Get current user from security context
