@@ -2,7 +2,13 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
 import api from '../lib/api';
-import type { Project } from '../types';
+import type { Task } from '../types';
+
+interface Project {
+  id: number;
+  number: string;
+  title: string;
+}
 
 interface TimeEntryFormProps {
   onSuccess: () => void;
@@ -12,15 +18,19 @@ interface TimeEntryFormProps {
 export default function TimeEntryForm({ onSuccess, initialDate }: TimeEntryFormProps) {
   const { t } = useTranslation();
   const [projects, setProjects] = useState<Project[]>([]);
-  
+  const [projectTasks, setProjectTasks] = useState<Task[]>([]);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+
   const formatDateForInput = (date: Date) => {
     return format(date, 'yyyy-MM-dd');
   };
-  
+
   const [formData, setFormData] = useState({
     projectId: '',
+    taskId: '',
     date: initialDate ? formatDateForInput(initialDate) : formatDateForInput(new Date()),
     hours: '',
+    quantity: '',
     description: '',
   });
   const [loading, setLoading] = useState(false);
@@ -32,14 +42,33 @@ export default function TimeEntryForm({ onSuccess, initialDate }: TimeEntryFormP
 
   const fetchProjects = async () => {
     try {
-      const { data } = await api.get<Project[]>('/projects');
+      const { data } = await api.get('/projects');
       setProjects(data);
-      if (data.length > 0) {
-        setFormData(prev => ({ ...prev, projectId: data[0].id.toString() }));
-      }
     } catch (err) {
       console.error('Error fetching projects:', err);
     }
+  };
+
+  const handleProjectChange = async (projectId: string) => {
+    setFormData(prev => ({ ...prev, projectId, taskId: '', hours: '', quantity: '' }));
+    setSelectedTask(null);
+    setProjectTasks([]);
+
+    if (!projectId) return;
+
+    try {
+      const { data } = await api.get(`/tasks/project/${projectId}`);
+      setProjectTasks(data);
+    } catch (err) {
+      console.error('Error fetching project tasks:', err);
+      setError('Błąd podczas pobierania zadań');
+    }
+  };
+
+  const handleTaskChange = (taskId: string) => {
+    const task = projectTasks.find(t => t.id?.toString() === taskId);
+    setSelectedTask(task || null);
+    setFormData(prev => ({ ...prev, taskId, hours: '', quantity: '' }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -48,27 +77,39 @@ export default function TimeEntryForm({ onSuccess, initialDate }: TimeEntryFormP
     setLoading(true);
 
     try {
-      // Get current user from localStorage
+      if (!selectedTask) {
+        throw new Error('Task not selected');
+      }
+
       const userStr = localStorage.getItem('user');
       if (!userStr) {
         throw new Error('User not found');
       }
       const user = JSON.parse(userStr);
 
-      await api.post('/time-entries', {
+      const payload: any = {
         userId: user.id,
-        projectId: parseInt(formData.projectId),
+        taskId: parseInt(formData.taskId),
         date: formData.date,
-        totalHours: parseFloat(formData.hours),
         description: formData.description,
-      });
+      };
+
+      if (selectedTask.billingType === 'UNIT') {
+        payload.quantity = parseFloat(formData.quantity);
+      } else {
+        payload.totalHours = parseFloat(formData.hours);
+      }
+
+      await api.post('/time-entries', payload);
 
       setFormData({
-        projectId: projects[0]?.id.toString() || '',
+        taskId: '',
         date: initialDate ? formatDateForInput(initialDate) : formatDateForInput(new Date()),
         hours: '',
+        quantity: '',
         description: '',
       });
+      setSelectedTask(null);
 
       onSuccess();
     } catch (err: any) {
@@ -94,17 +135,40 @@ export default function TimeEntryForm({ onSuccess, initialDate }: TimeEntryFormP
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <label className="block text-sm font-semibold text-dark-700 mb-2">
-            {t('timeEntry.project')}
+            Projekt
           </label>
           <select
             value={formData.projectId}
-            onChange={(e) => setFormData({ ...formData, projectId: e.target.value })}
+            onChange={(e) => handleProjectChange(e.target.value)}
             className="w-full px-4 py-3 border-2 border-dark-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all bg-white"
             required
           >
+            <option value="">— wybierz projekt —</option>
             {projects.map((project) => (
               <option key={project.id} value={project.id}>
-                {project.name} ({project.code})
+                {project.number} - {project.title}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold text-dark-700 mb-2">
+            Zadanie *
+          </label>
+          <select
+            value={formData.taskId}
+            onChange={(e) => handleTaskChange(e.target.value)}
+            disabled={!formData.projectId}
+            className="w-full px-4 py-3 border-2 border-dark-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
+            required
+          >
+            <option value="">
+              {!formData.projectId ? '— najpierw wybierz projekt —' : '— wybierz zadanie —'}
+            </option>
+            {projectTasks.map((task) => (
+              <option key={task.id} value={task.id}>
+                {task.number ? `[${task.number}] ` : ''}{task.title}
               </option>
             ))}
           </select>
@@ -123,22 +187,40 @@ export default function TimeEntryForm({ onSuccess, initialDate }: TimeEntryFormP
           />
         </div>
 
-        <div>
-          <label className="block text-sm font-semibold text-dark-700 mb-2">
-            {t('timeEntry.hours')}
-          </label>
-          <input
-            type="number"
-            step="0.5"
-            min="0.5"
-            max="24"
-            value={formData.hours}
-            onChange={(e) => setFormData({ ...formData, hours: e.target.value })}
-            className="w-full px-4 py-3 border-2 border-dark-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
-            placeholder="8.0"
-            required
-          />
-        </div>
+        {selectedTask && selectedTask.billingType === 'UNIT' ? (
+          <div>
+            <label className="block text-sm font-semibold text-dark-700 mb-2">
+              Ilość ({selectedTask.unitName || 'szt.'})
+            </label>
+            <input
+              type="number"
+              step="0.1"
+              min="0"
+              value={formData.quantity}
+              onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
+              className="w-full px-4 py-3 border-2 border-dark-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
+              placeholder="0"
+              required
+            />
+          </div>
+        ) : (
+          <div>
+            <label className="block text-sm font-semibold text-dark-700 mb-2">
+              {t('timeEntry.hours')}
+            </label>
+            <input
+              type="number"
+              step="0.5"
+              min="0.5"
+              max="24"
+              value={formData.hours}
+              onChange={(e) => setFormData({ ...formData, hours: e.target.value })}
+              className="w-full px-4 py-3 border-2 border-dark-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
+              placeholder="8.0"
+              required
+            />
+          </div>
+        )}
 
         <div className="md:col-span-2">
           <label className="block text-sm font-semibold text-dark-700 mb-2">

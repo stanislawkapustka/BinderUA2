@@ -34,7 +34,8 @@ public class AuthService {
      *
      * @param request Login request containing username and password
      * @return Authentication response with JWT token, expiration, and user details
-     * @throws RuntimeException if user not found, account inactive, or invalid credentials
+     * @throws RuntimeException if user not found, account inactive, or invalid
+     *                          credentials
      */
     @Transactional
     public AuthResponse login(AuthRequest request) {
@@ -42,16 +43,20 @@ public class AuthService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         log.info("Login attempt for user: {}", request.getUsername());
-        
+
         // Check if user account is active (soft-delete check)
         if (!user.getActive()) {
             throw new RuntimeException("User account is deactivated");
         }
-        
+
         // Verify password using BCrypt
+        log.debug("Stored hash: {}", user.getPassword());
+        log.debug("Provided password: {}", request.getPassword());
         boolean matches = passwordEncoder.matches(request.getPassword(), user.getPassword());
-        
+        log.debug("Password match result: {}", matches);
+
         if (!matches) {
+            log.error("Password mismatch for user: {}", request.getUsername());
             throw new RuntimeException("Invalid credentials");
         }
 
@@ -59,8 +64,7 @@ public class AuthService {
         String token = jwtUtil.generateToken(
                 user.getUsername(),
                 user.getRole().name(),
-                user.getLanguage().name()
-        );
+                user.getLanguage().name());
 
         return AuthResponse.builder()
                 .token(token)
@@ -97,7 +101,8 @@ public class AuthService {
                 .lastName(userDto.getLastName())
                 .password(passwordEncoder.encode("defaultPassword123"))
                 .role(User.Role.valueOf(userDto.getRole() != null ? userDto.getRole() : "PRACOWNIK"))
-                .contractType(User.ContractType.valueOf(userDto.getContractType() != null ? userDto.getContractType() : "UOP"))
+                .contractType(User.ContractType
+                        .valueOf(userDto.getContractType() != null ? userDto.getContractType() : "UOP"))
                 .uopGrossRate(userDto.getUopGrossRate())
                 .b2bHourlyNetRate(userDto.getB2bHourlyNetRate())
                 .language(User.Language.valueOf(userDto.getLanguage() != null ? userDto.getLanguage() : "PL"))

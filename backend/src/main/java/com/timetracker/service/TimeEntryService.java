@@ -12,17 +12,16 @@ import org.springframework.lang.NonNull;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Service handling time entry operations including creation, approval/rejection, and retrieval.
+ * Service handling time entry operations including creation,
+ * approval/rejection, and retrieval.
  * Enforces business rules such as automatic hour calculation from time ranges,
- * status management (ZGLOSZONY/ZATWIERDZONY/ODRZUCONY), and audit trail tracking.
+ * status management (ZGLOSZONY/ZATWIERDZONY/ODRZUCONY), and audit trail
+ * tracking.
  */
 @Service
 @RequiredArgsConstructor
@@ -32,23 +31,23 @@ public class TimeEntryService {
     private final UserRepository userRepository;
 
     /**
-     * Create a new time entry with automatic hour calculation.
-     * Calculates totalHours from hoursFrom/hoursTo if not provided directly.
+     * Create a new time entry associated with a task.
+     * For HOURLY tasks: totalHours is required.
+     * For UNIT tasks: quantity is required.
      * Sets initial status to ZGLOSZONY (submitted).
      *
      * @param dto Time entry data transfer object containing entry details
-     * @return Created time entry with generated ID and calculated hours
+     * @return Created time entry with generated ID
      */
     @Transactional
     public TimeEntryDto createEntry(TimeEntryDto dto) {
         TimeEntry entry = TimeEntry.builder()
                 .userId(dto.getUserId())
                 .projectId(dto.getProjectId())
-                .subprojectId(dto.getSubprojectId())
+                .taskId(dto.getTaskId())
                 .date(dto.getDate())
-                .hoursFrom(dto.getHoursFrom())
-                .hoursTo(dto.getHoursTo())
-                .totalHours(calculateTotalHours(dto))
+                .totalHours(dto.getTotalHours())
+                .quantity(dto.getQuantity())
                 .description(dto.getDescription())
                 .status(TimeEntry.Status.ZGLOSZONY)
                 .build();
@@ -58,34 +57,11 @@ public class TimeEntryService {
     }
 
     /**
-     * Calculate total hours worked from either direct hours or time range.
-     * Priority: 1) Use totalHours if provided, 2) Calculate from hoursFrom/hoursTo,
-     * 3) Default to zero if neither available.
-     *
-     * @param dto Time entry DTO with either totalHours or hoursFrom/hoursTo
-     * @return Calculated hours with 2 decimal places, or zero if unable to calculate
-     */
-    private BigDecimal calculateTotalHours(TimeEntryDto dto) {
-        if (dto.getTotalHours() != null) {
-            return dto.getTotalHours();
-        }
-        
-        if (dto.getHoursFrom() != null && dto.getHoursTo() != null) {
-            // Calculate duration between start and end time, convert minutes to hours
-            Duration duration = Duration.between(dto.getHoursFrom(), dto.getHoursTo());
-            long minutes = duration.toMinutes();
-            return BigDecimal.valueOf(minutes).divide(BigDecimal.valueOf(60), 2, RoundingMode.HALF_UP);
-        }
-        
-        return BigDecimal.ZERO;
-    }
-
-    /**
      * Retrieve all time entries for a specific user and month.
      *
      * @param userId ID of the user whose entries to retrieve
-     * @param year Year of entries (e.g., 2025)
-     * @param month Month of entries (1-12)
+     * @param year   Year of entries (e.g., 2025)
+     * @param month  Month of entries (1-12)
      * @return List of time entry DTOs for the specified period
      */
     public List<TimeEntryDto> getEntriesByUserAndMonth(Long userId, int year, int month) {
@@ -98,7 +74,7 @@ public class TimeEntryService {
     /**
      * Retrieve paginated time entries for a specific user.
      *
-     * @param userId ID of the user whose entries to retrieve
+     * @param userId   ID of the user whose entries to retrieve
      * @param pageable Pagination parameters (page number, size, sorting)
      * @return Page of time entry DTOs
      */
@@ -108,10 +84,12 @@ public class TimeEntryService {
     }
 
     /**
-     * Approve a time entry. Only MANAGER or DYREKTOR roles can call this (enforced at controller level).
-     * Sets status to ZATWIERDZONY (approved), records approver ID and approval timestamp.
+     * Approve a time entry. Only MANAGER or DYREKTOR roles can call this (enforced
+     * at controller level).
+     * Sets status to ZATWIERDZONY (approved), records approver ID and approval
+     * timestamp.
      *
-     * @param id Entry ID to approve
+     * @param id         Entry ID to approve
      * @param approverId ID of user performing approval (MANAGER or DYREKTOR)
      * @return Updated time entry DTO with ZATWIERDZONY status
      * @throws RuntimeException if entry not found
@@ -130,7 +108,8 @@ public class TimeEntryService {
     }
 
     /**
-     * Reject a time entry. Only MANAGER or DYREKTOR roles can call this (enforced at controller level).
+     * Reject a time entry. Only MANAGER or DYREKTOR roles can call this (enforced
+     * at controller level).
      * Sets status to ODRZUCONY (rejected) without recording approval details.
      *
      * @param id Entry ID to reject
@@ -163,11 +142,13 @@ public class TimeEntryService {
 
     /**
      * Retrieve time entries for the currently authenticated user.
-     * Extracts username from SecurityContext, looks up user, and returns their entries.
-     * If month/year provided, filters to that period; otherwise returns all entries.
+     * Extracts username from SecurityContext, looks up user, and returns their
+     * entries.
+     * If month/year provided, filters to that period; otherwise returns all
+     * entries.
      *
      * @param month Optional month filter (1-12)
-     * @param year Optional year filter (e.g., 2025)
+     * @param year  Optional year filter (e.g., 2025)
      * @return List of time entry DTOs for current user
      * @throws RuntimeException if authenticated user not found in database
      */
@@ -176,11 +157,11 @@ public class TimeEntryService {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        
+
         if (month != null && year != null) {
             return getEntriesByUserAndMonth(user.getId(), year, month);
         }
-        
+
         // Return all entries for current user if no month/year specified
         return timeEntryRepository.findByUserId(user.getId())
                 .stream()
@@ -190,9 +171,9 @@ public class TimeEntryService {
 
     /**
      * Update an existing time entry. Only updates non-null fields from DTO.
-     * Does not modify status, approval information, or projectId.
+     * Does not modify status, approval information, or taskId.
      *
-     * @param id Entry ID to update
+     * @param id  Entry ID to update
      * @param dto DTO containing fields to update (null values ignored)
      * @return Updated time entry DTO
      * @throws RuntimeException if entry not found
@@ -201,12 +182,14 @@ public class TimeEntryService {
     public TimeEntryDto updateEntry(Long id, TimeEntryDto dto) {
         TimeEntry entry = timeEntryRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Time entry not found"));
-        
-        if (dto.getHoursFrom() != null) entry.setHoursFrom(dto.getHoursFrom());
-        if (dto.getHoursTo() != null) entry.setHoursTo(dto.getHoursTo());
-        if (dto.getTotalHours() != null) entry.setTotalHours(dto.getTotalHours());
-        if (dto.getDescription() != null) entry.setDescription(dto.getDescription());
-        
+
+        if (dto.getTotalHours() != null)
+            entry.setTotalHours(dto.getTotalHours());
+        if (dto.getQuantity() != null)
+            entry.setQuantity(dto.getQuantity());
+        if (dto.getDescription() != null)
+            entry.setDescription(dto.getDescription());
+
         entry = timeEntryRepository.save(entry);
         return TimeEntryDto.from(entry);
     }

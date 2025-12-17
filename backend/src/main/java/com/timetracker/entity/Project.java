@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "projects", indexes = {
-    @Index(name = "idx_manager_id", columnList = "manager_id")
+        @Index(name = "idx_manager_id", columnList = "manager_id")
 })
 @Data
 @NoArgsConstructor
@@ -38,7 +38,7 @@ public class Project {
     @Column(length = 1000)
     private String description;
 
-    @Column(nullable = false)
+    @Column(name = "manager_id", nullable = false)
     private Long managerId;
 
     @Builder.Default

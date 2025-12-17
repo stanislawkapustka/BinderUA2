@@ -14,9 +14,9 @@ import java.time.LocalTime;
 
 @Entity
 @Table(name = "time_entries", indexes = {
-    @Index(name = "idx_user_date", columnList = "user_id,date"),
-    @Index(name = "idx_project_date", columnList = "project_id,date"),
-    @Index(name = "idx_status", columnList = "status")
+        @Index(name = "idx_user_date", columnList = "user_id,date"),
+        @Index(name = "idx_task_date", columnList = "task_id,date"),
+        @Index(name = "idx_status", columnList = "status")
 })
 @Data
 @NoArgsConstructor
@@ -28,11 +28,14 @@ public class TimeEntry {
     private Long id;
 
     @NotNull(message = "User ID is required")
-    @Column(nullable = false)
+    @Column(name = "user_id", nullable = false)
     private Long userId;
 
-    @NotNull(message = "Project ID is required")
-    @Column(nullable = false)
+    @NotNull(message = "Task ID is required")
+    @Column(name = "task_id", nullable = false)
+    private Long taskId;
+
+    @Column(name = "project_id")
     private Long projectId;
 
     @Column
@@ -42,16 +45,11 @@ public class TimeEntry {
     @Column(nullable = false)
     private LocalDate date;
 
-    @Column
-    private LocalTime hoursFrom;
-
-    @Column
-    private LocalTime hoursTo;
-
-    @NotNull(message = "Total hours is required")
-    @Positive(message = "Total hours must be positive")
-    @Column(nullable = false, precision = 5, scale = 2)
+    @Column(precision = 5, scale = 2)
     private BigDecimal totalHours;
+
+    @Column(precision = 10, scale = 2)
+    private BigDecimal quantity;
 
     @Column(length = 1000)
     private String description;

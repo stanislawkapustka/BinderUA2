@@ -41,7 +41,7 @@ export default function Dashboard() {
       navigate('/login');
       return;
     }
-    
+
     // Check if password change is required
     if (user.passwordChangeRequired) {
       navigate('/change-password');
@@ -66,21 +66,43 @@ export default function Dashboard() {
     setSelectedDate(date);
     setShowModal(true);
     setLoadingEntries(true);
-    
+
     try {
       // Fetch entries for selected day
       const dateStr = format(date, 'yyyy-MM-dd');
       const month = date.getMonth() + 1;
       const year = date.getFullYear();
-      
+
       const { data: allEntries } = selectedUserId
         ? await api.get<TimeEntry[]>(`/time-entries/user/${selectedUserId}/month/${year}/${month}`)
         : await api.get<TimeEntry[]>('/time-entries', {
-            params: { month, year }
+          params: { month, year }
+        });
+
+      // Fetch all projects and tasks to enrich entries with billing type
+      const { data: projects } = await api.get<any[]>('/projects');
+      const taskMap = new Map();
+
+      for (const project of projects) {
+        try {
+          const { data: tasks } = await api.get(`/tasks/project/${project.id}`);
+          tasks.forEach((task: any) => {
+            taskMap.set(task.id, task);
           });
-      
+        } catch (err) {
+          // Ignore if tasks not available for this project
+        }
+      }
+
+      // Enrich entries with billing type and unit name
+      const enrichedEntries = allEntries.map(entry => ({
+        ...entry,
+        billingType: taskMap.get(entry.taskId)?.billingType || 'HOURLY',
+        unitName: taskMap.get(entry.taskId)?.unitName
+      }));
+
       // Filter entries for selected date
-      const filteredEntries = allEntries.filter(entry => entry.date === dateStr);
+      const filteredEntries = enrichedEntries.filter(entry => entry.date === dateStr);
       setDayEntries(filteredEntries);
     } catch (err) {
       console.error('Error fetching day entries:', err);
@@ -144,17 +166,16 @@ export default function Dashboard() {
               <h1 className="text-2xl font-bold text-white tracking-tight">
                 BinderUA
               </h1>
-              
-              
+
+
               {/* Menu Navigation */}
               <div className="ml-10 flex items-center space-x-1">
                 <button
                   onClick={() => setActiveView('calendar')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                    activeView === 'calendar'
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeView === 'calendar'
                       ? 'bg-accent-500 text-white shadow-lg'
                       : 'text-dark-300 hover:text-white hover:bg-dark-700'
-                  }`}
+                    }`}
                 >
                   {t('nav.calendar')}
                 </button>
@@ -162,31 +183,28 @@ export default function Dashboard() {
                   <>
                     <button
                       onClick={() => setActiveView('users')}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                        activeView === 'users'
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeView === 'users'
                           ? 'bg-accent-500 text-white shadow-lg'
                           : 'text-dark-300 hover:text-white hover:bg-dark-700'
-                      }`}
+                        }`}
                     >
                       {t('nav.users')}
                     </button>
                     <button
                       onClick={() => setActiveView('reports')}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                        activeView === 'reports'
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeView === 'reports'
                           ? 'bg-accent-500 text-white shadow-lg'
                           : 'text-dark-300 hover:text-white hover:bg-dark-700'
-                      }`}
+                        }`}
                     >
                       {t('nav.reports')}
                     </button>
                     <button
                       onClick={() => setActiveView('projects')}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                        activeView === 'projects'
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeView === 'projects'
                           ? 'bg-accent-500 text-white shadow-lg'
                           : 'text-dark-300 hover:text-white hover:bg-dark-700'
-                      }`}
+                        }`}
                     >
                       {t('nav.projects') || 'Projekty'}
                     </button>
@@ -205,7 +223,7 @@ export default function Dashboard() {
                 <option value="en">🇬🇧 English</option>
                 <option value="ua">🇺🇦 Українська</option>
               </select>
-              
+
               <div className="flex items-center space-x-2">
                 <div className="w-8 h-8 rounded-full bg-accent-500 flex items-center justify-center text-white font-semibold">
                   {user.firstName.charAt(0)}{user.lastName.charAt(0)}
@@ -256,7 +274,7 @@ export default function Dashboard() {
                         <div className="absolute z-10 w-full mt-1 bg-white border-2 border-dark-300 rounded-lg shadow-xl max-h-60 overflow-y-auto">
                           {users
                             .filter((u) => u.active !== false && (
-                              userSearchTerm === '' || 
+                              userSearchTerm === '' ||
                               `${u.firstName} ${u.lastName}`.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
                               `${u.firstNameUa} ${u.lastNameUa}`.toLowerCase().includes(userSearchTerm.toLowerCase())
                             ))
@@ -281,13 +299,12 @@ export default function Dashboard() {
                                     </div>
                                     <div className="text-sm text-dark-600">{u.email}</div>
                                   </div>
-                                  <span className={`px-2 py-1 text-xs rounded-full ${
-                                    u.role === 'DYREKTOR' 
+                                  <span className={`px-2 py-1 text-xs rounded-full ${u.role === 'DYREKTOR'
                                       ? 'bg-accent-100 text-accent-800'
                                       : u.role === 'MANAGER'
-                                      ? 'bg-primary-100 text-primary-800'
-                                      : 'bg-dark-100 text-dark-800'
-                                  }`}>
+                                        ? 'bg-primary-100 text-primary-800'
+                                        : 'bg-dark-100 text-dark-800'
+                                    }`}>
                                     {u.role}
                                   </span>
                                 </div>
@@ -325,14 +342,14 @@ export default function Dashboard() {
                   >
                     <span>←</span> {t('nav.previousMonth')}
                   </button>
-                  
+
                   <button
                     onClick={handleToday}
                     className="px-4 py-2 bg-gradient-to-r from-primary-600 to-primary-700 text-white rounded-md hover:from-primary-700 hover:to-primary-800 transition-all text-sm shadow-md"
                   >
                     {t('nav.today')}
                   </button>
-                  
+
                   <button
                     onClick={handleNextMonth}
                     className="px-3 py-2 text-dark-700 bg-dark-100 hover:bg-dark-200 rounded-md transition-all text-sm flex items-center gap-2"
@@ -397,7 +414,7 @@ export default function Dashboard() {
               ) : dayEntries.length > 0 ? (
                 <div className="mb-6">
                   <h3 className="text-lg font-semibold mb-3">Istniejące wpisy</h3>
-                  <TimeEntryTable 
+                  <TimeEntryTable
                     entries={dayEntries}
                     currentUser={selectedUserId ? users.find(u => u.id === selectedUserId) || user : user}
                     onUpdate={handleEntryUpdate}
@@ -413,13 +430,13 @@ export default function Dashboard() {
               {!selectedUserId && (
                 <div className="border-t pt-6">
                   <h3 className="text-lg font-semibold mb-4">Dodaj nowy wpis</h3>
-                  <TimeEntryForm 
+                  <TimeEntryForm
                     onSuccess={handleFormSuccess}
                     initialDate={selectedDate}
                   />
                 </div>
               )}
-              
+
               {/* Information when viewing other user's calendar */}
               {selectedUserId && (
                 <div className="border-t pt-6">

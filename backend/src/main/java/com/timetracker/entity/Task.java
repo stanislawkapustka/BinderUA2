@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -31,6 +32,24 @@ public class Task {
 
     @Column(name = "project_id", nullable = false)
     private Long projectId;
+
+    @Column(length = 32)
+    private String number;
+
+    public enum BillingType {
+        HOURLY, UNIT
+    }
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "billing_type", nullable = false)
+    @Builder.Default
+    private BillingType billingType = BillingType.HOURLY;
+
+    @Column(name = "unit_price", precision = 10, scale = 2)
+    private BigDecimal unitPrice;
+
+    @Column(name = "unit_name", length = 64)
+    private String unitName;
 
     @Column(nullable = false)
     private boolean active = true;

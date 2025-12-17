@@ -2,7 +2,7 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/binderua2
     username: binder_ua
-    password: S56kt8al
+    password: kd$423DFG
   jpa:
     show-sql: true
 

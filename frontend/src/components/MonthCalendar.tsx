@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, isSameMonth, isSameDay, parseISO } from 'date-fns';
+import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, isSameMonth, isSameDay } from 'date-fns';
 import { pl, enUS, uk } from 'date-fns/locale';
 import api from '../lib/api';
 import type { TimeEntry, User } from '../types';
@@ -18,6 +18,8 @@ interface DayStatus {
   isHoliday: boolean;
   totalHours?: number;
   status?: string;
+  billingType?: 'HOURLY' | 'UNIT';
+  unitName?: string;
 }
 
 interface Holiday {
@@ -26,6 +28,15 @@ interface Holiday {
   name: string;
 }
 
+/**
+ * MonthCalendar Component
+ * 
+ * Displays a calendar view for the current month with time entry status indicators.
+ * - Shows entries with total hours (HOURLY) or quantity (UNIT)
+ * - Color-codes days by entry status: approved (green), submitted (blue), rejected (red)
+ * - Fetches time entries on mount and when month/selectedUserId changes
+ * - Supports viewing specific user's entries via selectedUserId prop
+ */
 export default function MonthCalendar({ currentDate, onDayClick, user, selectedUserId }: MonthCalendarProps) {
   const { t, i18n } = useTranslation();
   const [dayStatuses, setDayStatuses] = useState<Map<string, DayStatus>>(new Map());
@@ -34,10 +45,9 @@ export default function MonthCalendar({ currentDate, onDayClick, user, selectedU
 
   const locale = i18n.language === 'pl' ? pl : i18n.language === 'ua' ? uk : enUS;
 
-  useEffect(() => {
-    fetchMonthData();
-  }, [currentDate, selectedUserId]);
-
+  /**
+   * Fetch time entries for the current month and build day status map
+   */
   const fetchMonthData = async () => {
     setLoading(true);
     try {
@@ -48,17 +58,41 @@ export default function MonthCalendar({ currentDate, onDayClick, user, selectedU
       const { data: entries } = selectedUserId
         ? await api.get<TimeEntry[]>(`/time-entries/user/${selectedUserId}/month/${year}/${month}`)
         : await api.get<TimeEntry[]>('/time-entries', {
-            params: { month, year }
-          });
+          params: { month, year }
+        });
+
+      // Fetch all projects and tasks to enrich entries with billing type
+      let taskMap = new Map();
+      try {
+        const { data: projects } = await api.get('/projects');
+        for (const project of projects) {
+          try {
+            const { data: tasks } = await api.get(`/tasks/project/${project.id}`);
+            tasks.forEach((task: any) => {
+              taskMap.set(task.id, task);
+            });
+          } catch (err) {
+            // Ignore if tasks not available for this project
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching tasks:', err);
+      }
+
+      // Enrich entries with billing type and unit name
+      const enrichedEntries = entries.map(entry => ({
+        ...entry,
+        billingType: taskMap.get(entry.taskId)?.billingType || 'HOURLY',
+        unitName: taskMap.get(entry.taskId)?.unitName
+      }));
 
       // TODO: Add holidays endpoint in backend
       const holidayData: Holiday[] = [];
-
       setHolidays(holidayData);
 
       // Build day status map
       const statusMap = new Map<string, DayStatus>();
-      
+
       // Initialize all days in month
       const monthStart = startOfMonth(currentDate);
       const monthEnd = endOfMonth(currentDate);
@@ -66,7 +100,7 @@ export default function MonthCalendar({ currentDate, onDayClick, user, selectedU
       while (day <= monthEnd) {
         const dateKey = format(day, 'yyyy-MM-dd');
         const holiday = holidayData.find(h => h.date === dateKey);
-        
+
         statusMap.set(dateKey, {
           date: new Date(day),
           hasEntry: false,
@@ -76,41 +110,61 @@ export default function MonthCalendar({ currentDate, onDayClick, user, selectedU
         day = addDays(day, 1);
       }
 
-      // Add entry data
-      entries.forEach(entry => {
+      // Add entry data to status map
+      enrichedEntries.forEach(entry => {
         const dateKey = entry.date;
         const existing = statusMap.get(dateKey);
         if (existing) {
+          // For HOURLY entries use totalHours, for UNIT entries use quantity
+          const value = entry.totalHours !== undefined && entry.totalHours !== null
+            ? Number(entry.totalHours)
+            : (entry.quantity !== undefined && entry.quantity !== null ? Number(entry.quantity) : 0);
+
+          // Store billing type from enriched entry
+          const billingType = entry.billingType || 'HOURLY';
+
           statusMap.set(dateKey, {
             ...existing,
             hasEntry: true,
-            totalHours: (existing.totalHours || 0) + Number(entry.totalHours),
+            totalHours: (existing.totalHours || 0) + value,
             status: entry.status,
+            billingType: billingType,
+            unitName: entry.unitName,
           });
         }
       });
 
       setDayStatuses(statusMap);
-    } catch (err) {
-      console.error('Error fetching month data:', err);
+    } catch (error) {
+      console.error('Failed to fetch month data:', error);
     } finally {
       setLoading(false);
     }
   };
 
+  useEffect(() => {
+    fetchMonthData();
+  }, [currentDate, selectedUserId]);
+
+  /**
+   * Toggle a day as holiday (right-click). Only DYREKTOR can do this.
+   */
   const toggleHoliday = async (date: Date) => {
     // TODO: Implement when backend has holidays endpoint
     if (user.role !== 'DYREKTOR') return;
     console.log('Holiday toggle not yet implemented - backend endpoint needed');
   };
 
-  const renderCalendarDays = () => {
+  /**
+   * Get all calendar days including padding days from adjacent months
+   */
+  const renderCalendarDays = (): Date[] => {
     const monthStart = startOfMonth(currentDate);
     const monthEnd = endOfMonth(currentDate);
     const startDate = startOfWeek(monthStart, { locale });
     const endDate = endOfWeek(monthEnd, { locale });
 
-    const days = [];
+    const days: Date[] = [];
     let day = startDate;
 
     while (day <= endDate) {
@@ -121,7 +175,10 @@ export default function MonthCalendar({ currentDate, onDayClick, user, selectedU
     return days;
   };
 
-  const getDayClassName = (date: Date) => {
+  /**
+   * Get CSS classes for a day cell based on its status
+   */
+  const getDayClassName = (date: Date): string => {
     const dateKey = format(date, 'yyyy-MM-dd');
     const dayStatus = dayStatuses.get(dateKey);
     const isCurrentMonth = isSameMonth(date, currentDate);
@@ -150,6 +207,34 @@ export default function MonthCalendar({ currentDate, onDayClick, user, selectedU
     }
 
     return className;
+  };
+
+  /**
+   * Format the entry value display
+   * HOURLY: "10h"
+   * UNIT: "10 szt." or "10 {unitName}"
+   */
+  const formatEntryValue = (dayStatus: DayStatus): string => {
+    if (!dayStatus.totalHours) return '';
+
+    if (dayStatus.billingType === 'UNIT') {
+      return `${dayStatus.totalHours} ${dayStatus.unitName || 'szt.'}`;
+    }
+    return `${dayStatus.totalHours}h`;
+  };
+
+  /**
+   * Get status display text and color
+   */
+  const getStatusDisplay = (status?: string): { text: string; color: string } => {
+    switch (status) {
+      case 'ZATWIERDZONY':
+        return { text: 'Zatwierdzony', color: 'text-green-600' };
+      case 'ODRZUCONY':
+        return { text: 'Odrzucony', color: 'text-red-600' };
+      default:
+        return { text: 'Zgłoszony', color: 'text-blue-600' };
+    }
   };
 
   const handleDayClick = (date: Date) => {
@@ -202,7 +287,7 @@ export default function MonthCalendar({ currentDate, onDayClick, user, selectedU
         </div>
         <div className="flex items-center gap-2 bg-red-50 px-3 py-2 rounded-lg">
           <div className="w-4 h-4 bg-red-100 border-2 border-red-400 rounded shadow-sm"></div>
-          <span className="font-medium text-red-800">Święto</span>
+          <span className="font-medium text-red-800">Odrzucony</span>
         </div>
         <div className="flex items-center gap-2 bg-dark-50 px-3 py-2 rounded-lg">
           <div className="w-4 h-4 bg-white border-2 border-dark-300 rounded shadow-sm"></div>
@@ -224,6 +309,7 @@ export default function MonthCalendar({ currentDate, onDayClick, user, selectedU
           const dateKey = format(date, 'yyyy-MM-dd');
           const dayStatus = dayStatuses.get(dateKey);
           const isCurrentMonth = isSameMonth(date, currentDate);
+          const statusDisplay = dayStatus ? getStatusDisplay(dayStatus.status) : { text: '', color: '' };
 
           return (
             <div
@@ -236,7 +322,7 @@ export default function MonthCalendar({ currentDate, onDayClick, user, selectedU
                 <div className="font-semibold text-lg mb-1">
                   {format(date, 'd')}
                 </div>
-                
+
                 {isCurrentMonth && dayStatus && (
                   <div className="flex-1 flex flex-col justify-between text-xs">
                     {dayStatus.isHoliday ? (
@@ -244,16 +330,10 @@ export default function MonthCalendar({ currentDate, onDayClick, user, selectedU
                     ) : dayStatus.hasEntry ? (
                       <div className="space-y-1">
                         <div className="font-medium text-gray-700">
-                          ✓ {dayStatus.totalHours}h
+                          ✓ {formatEntryValue(dayStatus)}
                         </div>
-                        <div className={`text-xs ${
-                          dayStatus.status === 'ZATWIERDZONY' ? 'text-green-600' :
-                          dayStatus.status === 'ODRZUCONY' ? 'text-red-600' :
-                          'text-blue-600'
-                        }`}>
-                          {dayStatus.status === 'ZATWIERDZONY' ? 'Zatwierdzony' :
-                           dayStatus.status === 'ODRZUCONY' ? 'Odrzucony' :
-                           'Zgłoszony'}
+                        <div className={`text-xs font-medium ${statusDisplay.color}`}>
+                          {statusDisplay.text}
                         </div>
                       </div>
                     ) : (

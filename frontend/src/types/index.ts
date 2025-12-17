@@ -21,14 +21,30 @@ export interface AuthResponse {
   user: User;
 }
 
+export interface Task {
+  id?: number;
+  title: string;
+  description?: string;
+  projectId?: number;
+  number?: string;
+  billingType?: 'HOURLY' | 'UNIT';
+  unitPrice?: number | null;
+  unitName?: string | null;
+}
+
 export interface TimeEntry {
   id: number;
   userId: number;
   userName?: string;
-  projectId: number;
+  projectId?: number;
   projectName?: string;
+  taskId?: number;
+  taskNumber?: string;
+  billingType?: 'HOURLY' | 'UNIT';
+  unitName?: string;
   date: string;
-  hours: number;
+  hours?: number;
+  quantity?: number;
   startTime?: string;
   endTime?: string;
   totalHours?: number;

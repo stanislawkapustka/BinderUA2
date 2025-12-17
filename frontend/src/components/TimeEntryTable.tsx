@@ -91,7 +91,7 @@ export default function TimeEntryTable({ entries, currentUser, onUpdate }: TimeE
                 {t('timeEntry.project')}
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                {t('timeEntry.hours')}
+                Godziny / Jednostki
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 {t('timeEntry.description')}
@@ -124,6 +124,8 @@ export default function TimeEntryTable({ entries, currentUser, onUpdate }: TimeE
                       onChange={(e) => setEditData({ ...editData, hours: e.target.value })}
                       className="w-20 px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary-500"
                     />
+                  ) : entry.billingType === 'UNIT' ? (
+                    `${entry.quantity || 0} ${entry.unitName || 'szt.'}`
                   ) : (
                     `${entry.totalHours || entry.hours || 0}h`
                   )}
@@ -188,8 +190,26 @@ export default function TimeEntryTable({ entries, currentUser, onUpdate }: TimeE
 
       <div className="bg-gray-50 px-6 py-3 border-t border-gray-200">
         <div className="text-sm text-gray-700">
-          <strong>{t('timeEntry.totalHours')}:</strong>{' '}
-          {entries.reduce((sum, entry) => sum + (entry.totalHours || entry.hours || 0), 0).toFixed(1)}h
+          {entries.some(e => e.billingType === 'HOURLY') && (
+            <>
+              <strong>Razem godzin:</strong>{' '}
+              {entries
+                .filter(e => e.billingType !== 'UNIT')
+                .reduce((sum, entry) => sum + (entry.totalHours || entry.hours || 0), 0)
+                .toFixed(1)}
+              h
+              {entries.some(e => e.billingType === 'UNIT') && <br />}
+            </>
+          )}
+          {entries.some(e => e.billingType === 'UNIT') && (
+            <>
+              <strong>Razem jednostek:</strong>{' '}
+              {entries
+                .filter(e => e.billingType === 'UNIT')
+                .reduce((sum, entry) => sum + (entry.quantity || 0), 0)
+                .toFixed(1)}
+            </>
+          )}
         </div>
       </div>
     </div>
