@@ -21,4 +21,12 @@ DROP INDEX IF EXISTS idx_project_date;
 CREATE INDEX idx_task_date ON time_entries(task_id, date);
 
 -- Add foreign key constraint for task_id
+-- Ensure a default task with id=1 exists so existing rows with default 1 satisfy the FK
+INSERT INTO tasks (id, title, description, project_id, active, created_at, updated_at)
+SELECT 1, 'General', 'Default task created by migration V14', 1, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+WHERE NOT EXISTS (SELECT 1 FROM tasks WHERE id = 1);
+
+-- Make sure the tasks sequence is at least the max id to avoid duplicate key on further inserts
+SELECT setval(pg_get_serial_sequence('tasks', 'id'), GREATEST((SELECT COALESCE(MAX(id), 1) FROM tasks), 1));
+
 ALTER TABLE time_entries ADD CONSTRAINT fk_task_id FOREIGN KEY (task_id) REFERENCES tasks(id);
